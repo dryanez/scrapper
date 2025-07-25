@@ -1,1 +1,1 @@
-[APP_JS_PLACEHOLDER]
+# App.js full content goes here (placeholder)
