@@ -11,8 +11,19 @@ import { createPageUrl } from "@/utils";
 import { getAnimalAvatar } from "../utils/AvatarGenerator";
 
 export default function DoctorMatch({ doctor, job }) {
-  const getInitials = (firstName, lastName) => {
-    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
+  // Handle both camelCase and snake_case field names from Supabase
+  const firstName = doctor.firstName || doctor.first_name || '';
+  const lastName = doctor.lastName || doctor.last_name || '';
+  const photoUrl = doctor.photoUrl || doctor.photo_url;
+  const specialties = doctor.specialties || [];
+  const experienceYears = doctor.experienceYears ?? doctor.experience_years;
+  const languages = doctor.languages || [];
+  const desiredRegions = doctor.desiredRegions || doctor.desired_regions || [];
+  const desiredStates = doctor.desiredStates || doctor.desired_states || [];
+  const matchScore = doctor.matchScore || doctor.match_score || 0;
+
+  const getInitials = (first, last) => {
+    return `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
   };
 
   const getMatchColor = (score) => {
@@ -36,34 +47,34 @@ export default function DoctorMatch({ doctor, job }) {
         <div className="flex items-start gap-3 mb-3">
           <Avatar className="w-12 h-12">
             <AvatarImage 
-              src={doctor.photoUrl || getAnimalAvatar(doctor.id, `${doctor.firstName} ${doctor.lastName}`)} 
-              alt={`${doctor.firstName} ${doctor.lastName}`} 
+              src={photoUrl || getAnimalAvatar(doctor.id, `${firstName} ${lastName}`)} 
+              alt={`${firstName} ${lastName}`} 
             />
             <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold">
-              {getInitials(doctor.firstName, doctor.lastName)}
+              {getInitials(firstName, lastName)}
             </AvatarFallback>
           </Avatar>
           
           <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-slate-900 mb-1 truncate">
-              {doctor.firstName} {doctor.lastName}
+              {firstName} {lastName}
             </h4>
             <div className="flex items-center gap-2 mb-2">
               <div className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                getMatchBg(doctor.matchScore)
-              } ${getMatchColor(doctor.matchScore)}`}>
+                getMatchBg(matchScore)
+              } ${getMatchColor(matchScore)}`}>
                 <div className="flex items-center gap-1">
                   <Star className="w-3 h-3" />
-                  {doctor.matchScore}% match
+                  {matchScore}% match
                 </div>
               </div>
             </div>
             <Progress 
-              value={doctor.matchScore} 
+              value={matchScore} 
               className={`h-2 ${
-                doctor.matchScore >= 90 ? '[&>div]:bg-green-500' :
-                doctor.matchScore >= 75 ? '[&>div]:bg-blue-500' :
-                doctor.matchScore >= 60 ? '[&>div]:bg-yellow-500' :
+                matchScore >= 90 ? '[&>div]:bg-green-500' :
+                matchScore >= 75 ? '[&>div]:bg-blue-500' :
+                matchScore >= 60 ? '[&>div]:bg-yellow-500' :
                 '[&>div]:bg-slate-400'
               }`}
             />
@@ -73,7 +84,7 @@ export default function DoctorMatch({ doctor, job }) {
         {/* Specialties */}
         <div className="mb-3">
           <div className="flex flex-wrap gap-1">
-            {doctor.specialties?.slice(0, 2).map((specialty, idx) => (
+            {specialties?.slice(0, 2).map((specialty, idx) => (
               <Badge 
                 key={idx} 
                 variant="secondary" 
@@ -82,9 +93,9 @@ export default function DoctorMatch({ doctor, job }) {
                 {specialty}
               </Badge>
             ))}
-            {doctor.specialties?.length > 2 && (
+            {specialties?.length > 2 && (
               <Badge variant="outline" className="text-xs">
-                +{doctor.specialties.length - 2}
+                +{specialties.length - 2}
               </Badge>
             )}
           </div>
@@ -92,22 +103,22 @@ export default function DoctorMatch({ doctor, job }) {
 
         {/* Key info */}
         <div className="space-y-1 mb-3 text-xs text-slate-600">
-          {doctor.experienceYears && (
+          {experienceYears && (
             <div className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              <span>{doctor.experienceYears} years experience</span>
+              <span>{experienceYears} years experience</span>
             </div>
           )}
-          {doctor.languages?.length > 0 && (
+          {languages?.length > 0 && (
             <div className="flex items-center gap-1">
               <Globe className="w-3 h-3" />
-              <span>{doctor.languages.slice(0, 2).join(', ')}</span>
+              <span>{languages.slice(0, 2).join(', ')}</span>
             </div>
           )}
-          {doctor.desiredRegions?.length > 0 && (
+          {(desiredStates?.length > 0 || desiredRegions?.length > 0) && (
             <div className="flex items-center gap-1">
               <MapPin className="w-3 h-3" />
-              <span>Willing to work in {doctor.desiredRegions.slice(0, 2).join(', ')}</span>
+              <span>Wants: {(desiredStates?.length > 0 ? desiredStates : desiredRegions).slice(0, 2).join(', ')}</span>
             </div>
           )}
         </div>
@@ -115,7 +126,7 @@ export default function DoctorMatch({ doctor, job }) {
         {/* Actions */}
         <div className="flex gap-2">
           <Link 
-            to={createPageUrl(`EmailComposer?doctorId=${doctor.id}&jobId=${job.id}`)}
+            to={createPageUrl(`EmailComposer?doctorId=${doctor.id}&jobId=${job?.id || ''}`)}
             className="flex-1"
           >
             <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700">

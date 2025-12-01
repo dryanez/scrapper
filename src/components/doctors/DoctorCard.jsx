@@ -10,8 +10,19 @@ import { createPageUrl } from "@/utils";
 import { getAnimalAvatar } from "../utils/AvatarGenerator";
 
 export default function DoctorCard({ doctor }) {
-  const getInitials = (firstName, lastName) => {
-    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
+  // Handle both camelCase and snake_case field names from Supabase
+  const firstName = doctor.firstName || doctor.first_name || '';
+  const lastName = doctor.lastName || doctor.last_name || '';
+  const email = doctor.email || '';
+  const phone = doctor.phone || '';
+  const photoUrl = doctor.photoUrl || doctor.photo_url;
+  const specialties = doctor.specialties || [];
+  const experienceYears = doctor.experienceYears ?? doctor.experience_years;
+  const desiredStates = doctor.desiredStates || doctor.desired_states || [];
+  const workPermitStatus = doctor.workPermitStatus || doctor.work_permit_status;
+
+  const getInitials = (first, last) => {
+    return `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
   };
 
   const workPermitStyles = {
@@ -27,24 +38,24 @@ export default function DoctorCard({ doctor }) {
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="w-12 h-12 border-2 border-border shadow-md">
             <AvatarImage 
-              src={doctor.photoUrl || getAnimalAvatar(doctor.id, `${doctor.firstName} ${doctor.lastName}`)} 
-              alt={`${doctor.firstName} ${doctor.lastName}`} 
+              src={photoUrl || getAnimalAvatar(doctor.id, `${firstName} ${lastName}`)} 
+              alt={`${firstName} ${lastName}`} 
             />
             <AvatarFallback className="bg-gradient-to-r from-primary to-violet-500 text-primary-foreground font-semibold">
-              {getInitials(doctor.firstName, doctor.lastName)}
+              {getInitials(firstName, lastName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground truncate">
-              {doctor.firstName} {doctor.lastName}
+              {firstName} {lastName}
             </h3>
-            <p className="text-sm text-muted-foreground truncate">{doctor.email}</p>
+            <p className="text-sm text-muted-foreground truncate">{email}</p>
           </div>
         </div>
         
         {/* Specialties */}
         <div className="flex flex-wrap gap-1 mb-3">
-          {doctor.specialties?.slice(0, 2).map((specialty, idx) => (
+          {specialties?.slice(0, 2).map((specialty, idx) => (
             <Badge 
               key={idx} 
               variant="secondary" 
@@ -53,9 +64,9 @@ export default function DoctorCard({ doctor }) {
               {specialty}
             </Badge>
           ))}
-          {doctor.specialties?.length > 2 && (
+          {specialties?.length > 2 && (
             <Badge variant="outline" className="text-xs border-border">
-              +{doctor.specialties.length - 2}
+              +{specialties.length - 2}
             </Badge>
           )}
         </div>
@@ -63,26 +74,26 @@ export default function DoctorCard({ doctor }) {
 
       <CardContent className="pt-0 flex-grow flex flex-col justify-between">
         <div className="space-y-2 mb-4 text-sm">
-          {doctor.experienceYears != null && (
+          {experienceYears != null && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Briefcase className="w-4 h-4" />
-              <span>{doctor.experienceYears} year{doctor.experienceYears !== 1 ? 's' : ''} experience</span>
+              <span>{experienceYears} year{experienceYears !== 1 ? 's' : ''} experience</span>
             </div>
           )}
           
-          {doctor.desiredStates?.length > 0 && (
+          {desiredStates?.length > 0 && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="w-4 h-4" />
-              <span className="truncate">Wants: {doctor.desiredStates.join(', ')}</span>
+              <span className="truncate">Wants: {desiredStates.join(', ')}</span>
             </div>
           )}
           
-          {doctor.workPermitStatus && (
+          {workPermitStatus && (
             <div className="flex items-center gap-2">
               <Badge 
-                className={`text-xs ${workPermitStyles[doctor.workPermitStatus]}`}
+                className={`text-xs ${workPermitStyles[workPermitStatus]}`}
               >
-                {doctor.workPermitStatus.replace('_', ' ')}
+                {workPermitStatus.replace('_', ' ')}
               </Badge>
             </div>
           )}
@@ -96,13 +107,15 @@ export default function DoctorCard({ doctor }) {
             </Button>
           </Link>
           <div className="flex gap-2">
-            <a href={`mailto:${doctor.email}`} className="flex-1">
-              <Button variant="outline" size="sm" className="w-full">
-                <Mail className="w-4 h-4" />
-              </Button>
-            </a>
-            {doctor.phone && (
-              <a href={`tel:${doctor.phone}`} className="flex-1">
+            {email && (
+              <a href={`mailto:${email}`} className="flex-1">
+                <Button variant="outline" size="sm" className="w-full">
+                  <Mail className="w-4 h-4" />
+                </Button>
+              </a>
+            )}
+            {phone && (
+              <a href={`tel:${phone}`} className="flex-1">
                 <Button variant="outline" size="sm" className="w-full">
                   <Phone className="w-4 h-4" />
                 </Button>
