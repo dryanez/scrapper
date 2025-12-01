@@ -20,7 +20,7 @@ const setStorageData = (key, data) => {
 };
 
 // ============================================
-// Column name mapping (app uses _date, Supabase uses _at)
+// Column name mapping (app uses camelCase, Supabase uses snake_case)
 // ============================================
 const mapColumnName = (column) => {
   const mapping = {
@@ -30,6 +30,29 @@ const mapColumnName = (column) => {
     'isActive': 'is_active',
   };
   return mapping[column] || column;
+};
+
+// Convert camelCase to snake_case
+const toSnakeCase = (str) => {
+  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+};
+
+// Convert snake_case to camelCase
+const toCamelCase = (str) => {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+};
+
+// Convert object keys from camelCase to snake_case for Supabase
+const mapKeysToSnakeCase = (obj) => {
+  if (!obj || typeof obj !== 'object') return obj;
+  
+  const mapped = {};
+  for (const [key, value] of Object.entries(obj)) {
+    // Skip if already snake_case or special keys
+    const snakeKey = key.includes('_') ? key : toSnakeCase(key);
+    mapped[snakeKey] = value;
+  }
+  return mapped;
 };
 
 // ============================================
@@ -105,10 +128,13 @@ const createSupabaseEntity = (tableName) => {
     },
 
     create: async (entityData) => {
+      // Convert camelCase keys to snake_case for Supabase
+      const mappedData = mapKeysToSnakeCase(entityData);
+      
       const { data, error } = await supabase
         .from(tableName)
         .insert([{
-          ...entityData,
+          ...mappedData,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }])
@@ -120,10 +146,13 @@ const createSupabaseEntity = (tableName) => {
     },
 
     update: async (id, updates) => {
+      // Convert camelCase keys to snake_case for Supabase
+      const mappedUpdates = mapKeysToSnakeCase(updates);
+      
       const { data, error } = await supabase
         .from(tableName)
         .update({
-          ...updates,
+          ...mappedUpdates,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -145,8 +174,9 @@ const createSupabaseEntity = (tableName) => {
     },
 
     bulkCreate: async (items) => {
+      // Convert camelCase keys to snake_case for Supabase
       const itemsWithTimestamps = items.map(item => ({
-        ...item,
+        ...mapKeysToSnakeCase(item),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }));
@@ -172,8 +202,9 @@ const createSupabaseEntity = (tableName) => {
 
     // Upsert - insert or update based on unique constraint
     upsert: async (items, onConflict = 'id') => {
+      // Convert camelCase keys to snake_case for Supabase
       const itemsWithTimestamps = (Array.isArray(items) ? items : [items]).map(item => ({
-        ...item,
+        ...mapKeysToSnakeCase(item),
         updated_at: new Date().toISOString()
       }));
       
