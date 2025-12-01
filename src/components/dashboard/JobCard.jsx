@@ -51,8 +51,8 @@ export default function JobCard({ job, isSelected, onClick }) {
     <Card 
       className={`cursor-pointer transition-all duration-200 hover:shadow-lg border-2 ${
         isSelected 
-          ? 'border-blue-500 shadow-lg bg-blue-50/30' 
-          : 'border-slate-200 hover:border-slate-300 bg-white'
+          ? 'border-primary shadow-lg bg-primary/10' 
+          : 'border-border hover:border-primary/50 bg-card'
       }`}
       onClick={onClick}
     >
@@ -61,18 +61,18 @@ export default function JobCard({ job, isSelected, onClick }) {
           <div className="flex-1">
             <Link 
               to={createPageUrl(`JobDetails?id=${job.id}`)}
-              className="block hover:text-blue-600 transition-colors"
+              className="block hover:text-primary transition-colors"
               onClick={(e) => e.stopPropagation()} // Prevent card onClick when clicking the link
             >
               <h3 className={`text-lg font-semibold mb-3 ${
-                isSelected ? 'text-blue-900' : 'text-slate-900'
+                isSelected ? 'text-primary' : 'text-foreground'
               }`}>
                 {job.title}
               </h3>
             </Link>
             
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
+              <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center overflow-hidden">
                 <img
                   src={job.hospitalLogo || getHospitalLogo(job.hospitalName)}
                   alt={`${job.hospitalName} logo`}
@@ -83,8 +83,8 @@ export default function JobCard({ job, isSelected, onClick }) {
                 />
               </div>
               <div>
-                <div className="font-medium text-slate-900">{job.hospitalName}</div>
-                <div className="flex items-center gap-2 text-slate-500 text-sm">
+                <div className="font-medium text-foreground">{job.hospitalName}</div>
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <MapPin className="w-3 h-3" />
                   <span>{job.city}, {GERMAN_STATES[job.state] || job.state}</span>
                 </div>
@@ -96,7 +96,7 @@ export default function JobCard({ job, isSelected, onClick }) {
               href={job.jobDetailsUrl || job.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-400 hover:text-slate-600 transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
               onClick={(e) => e.stopPropagation()} // Prevent card onClick when clicking the external link
             >
               <ExternalLink className="w-5 h-5" />
@@ -111,15 +111,15 @@ export default function JobCard({ job, isSelected, onClick }) {
             variant="secondary" 
             className={`${
               isSelected 
-                ? 'bg-blue-100 text-blue-800' 
-                : 'bg-slate-100 text-slate-700'
+                ? 'bg-primary/20 text-primary' 
+                : 'bg-secondary text-muted-foreground'
             }`}
           >
             {job.specialty}
           </Badge>
           <Badge 
             variant="outline"
-            className={isSelected ? 'border-blue-300 text-blue-700' : ''}
+            className={isSelected ? 'border-primary/50 text-primary' : 'border-border'}
           >
             {job.seniority}
           </Badge>
@@ -127,7 +127,7 @@ export default function JobCard({ job, isSelected, onClick }) {
             <Badge 
               variant="outline" 
               className={`text-xs ${
-                isSelected ? 'border-blue-300 text-blue-700' : 'text-slate-500'
+                isSelected ? 'border-primary/50 text-primary' : 'text-muted-foreground border-border'
               }`}
             >
               {job.contractType}
@@ -137,16 +137,28 @@ export default function JobCard({ job, isSelected, onClick }) {
 
         {job.salaryRange && (
           <div className={`text-sm font-medium mb-2 ${
-            isSelected ? 'text-blue-700' : 'text-slate-700'
+            isSelected ? 'text-primary' : 'text-foreground'
           }`}>
             {job.salaryRange}
           </div>
         )}
 
-        {job.descriptionHtml && (
+        {/* Show description from scraped jobs */}
+        {job.description && (
           <div 
             className={`text-sm line-clamp-2 mb-3 ${
-              isSelected ? 'text-blue-600' : 'text-slate-600'
+              isSelected ? 'text-primary/80' : 'text-muted-foreground'
+            }`}
+          >
+            {job.description}
+          </div>
+        )}
+
+        {/* Show descriptionHtml for manually created jobs */}
+        {!job.description && job.descriptionHtml && (
+          <div 
+            className={`text-sm line-clamp-2 mb-3 ${
+              isSelected ? 'text-primary/80' : 'text-muted-foreground'
             }`}
             dangerouslySetInnerHTML={{ 
               __html: job.descriptionHtml.substring(0, 120) + '...' 
@@ -154,7 +166,7 @@ export default function JobCard({ job, isSelected, onClick }) {
           />
         )}
 
-        <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             <span>
@@ -168,8 +180,8 @@ export default function JobCard({ job, isSelected, onClick }) {
             variant="outline" 
             className={`text-xs ${
               job.source === 'ai-scan' 
-                ? 'bg-green-50 text-green-700 border-green-200' 
-                : 'bg-gray-50 text-gray-700 border-gray-200'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                : 'bg-secondary text-muted-foreground border-border'
             }`}
           >
             {job.source}

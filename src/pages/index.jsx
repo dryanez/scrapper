@@ -8,13 +8,13 @@ import Scraping from "./Scraping";
 
 import JobDetails from "./JobDetails";
 
+import JobDatabase from "./JobDatabase";
+
 import Hospitals from "./Hospitals";
 
 import DoctorDetail from "./DoctorDetail";
 
 import EmailComposer from "./EmailComposer";
-
-import EmailSettings from "./EmailSettings";
 
 import HospitalDetail from "./HospitalDetail";
 
@@ -32,8 +32,6 @@ import UnmatchedDoctors from "./UnmatchedDoctors";
 
 import DoctorMatches from "./DoctorMatches";
 
-import AmeosScraper from "./AmeosScraper";
-
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -45,14 +43,14 @@ const PAGES = {
     Scraping: Scraping,
     
     JobDetails: JobDetails,
+
+    JobDatabase: JobDatabase,
     
     Hospitals: Hospitals,
     
     DoctorDetail: DoctorDetail,
     
     EmailComposer: EmailComposer,
-    
-    EmailSettings: EmailSettings,
     
     HospitalDetail: HospitalDetail,
     
@@ -69,8 +67,6 @@ const PAGES = {
     UnmatchedDoctors: UnmatchedDoctors,
     
     DoctorMatches: DoctorMatches,
-    
-    AmeosScraper: AmeosScraper,
     
 }
 
@@ -106,14 +102,14 @@ function PagesContent() {
                 <Route path="/Scraping" element={<Scraping />} />
                 
                 <Route path="/JobDetails" element={<JobDetails />} />
+
+                <Route path="/JobDatabase" element={<JobDatabase />} />
                 
                 <Route path="/Hospitals" element={<Hospitals />} />
                 
                 <Route path="/DoctorDetail" element={<DoctorDetail />} />
                 
                 <Route path="/EmailComposer" element={<EmailComposer />} />
-                
-                <Route path="/EmailSettings" element={<EmailSettings />} />
                 
                 <Route path="/HospitalDetail" element={<HospitalDetail />} />
                 
@@ -130,8 +126,6 @@ function PagesContent() {
                 <Route path="/UnmatchedDoctors" element={<UnmatchedDoctors />} />
                 
                 <Route path="/DoctorMatches" element={<DoctorMatches />} />
-                
-                <Route path="/AmeosScraper" element={<AmeosScraper />} />
                 
             </Routes>
         </Layout>

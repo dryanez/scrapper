@@ -324,30 +324,35 @@ Your entire response must be a single JSON object. Do not include any text, expl
     }
   };
 
-  // Function to make emails clickable while preserving all other text
-  const renderContactInfo = (text) => {
-    if (!text) return null;
+  // Parse contact info into structured format with name/title and email
+  const parseContactInfo = (contactStr) => {
+    if (!contactStr) return [];
     
-    // Split by email pattern but keep the emails
-    const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
-    const parts = text.split(emailRegex);
+    const contacts = [];
+    // Split by common patterns that indicate a new contact
+    const parts = contactStr.split(/(?=Chefarzt|Oberarzt|Ärztlicher|Ärztliche|Chefärztin|Oberärztin|Direktor|Direktorin|Sekretariat|Sekretär|Personalleitung|Personalstelle|Personal\s|Prof\.\s*Dr\.|Dr\.\s*med\.|Herr\s|Frau\s|CA\s|kommissarisch)/gi);
     
-    return parts.map((part, index) => {
-      // Check if this part is an email
-      if (emailRegex.test(part)) {
-        return (
-          <a
-            key={index}
-            href={`mailto:${part}`}
-            className="text-blue-600 hover:text-blue-800 hover:underline"
-          >
-            {part}
-          </a>
-        );
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!trimmed || trimmed.length < 3) continue;
+      
+      // Extract email from this part
+      const emailMatch = trimmed.match(/[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}/);
+      const email = emailMatch ? emailMatch[0] : null;
+      
+      // Get the name/title (everything before the email or the whole thing)
+      let title = email ? trimmed.replace(email, '').trim() : trimmed;
+      title = title.replace(/\s+/g, ' ').trim();
+      
+      // Clean up trailing/leading punctuation
+      title = title.replace(/^[,.\s]+|[,.\s]+$/g, '');
+      
+      if (title || email) {
+        contacts.push({ title, email });
       }
-      // Return regular text
-      return part;
-    });
+    }
+    
+    return contacts;
   };
 
   if (isLoading) {
@@ -508,18 +513,61 @@ Your entire response must be a single JSON object. Do not include any text, expl
               </CardContent>
             </Card>
 
-            {hospital.notes && (
+            {(hospital.notes || hospital.contactInfo || hospital.contactEmails) && (
               <Card className="bg-white/90 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Mail className="w-5 h-5" />
-                    Contact Information
+                    Kontakt / Contact Information
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="p-4 bg-slate-50 rounded-lg text-sm text-slate-800 whitespace-pre-wrap font-mono overflow-x-auto">
-                    {renderContactInfo(hospital.notes)}
-                  </div>
+                <CardContent className="space-y-4">
+                  {(() => {
+                    const contacts = parseContactInfo(hospital.contactInfo || hospital.notes);
+                    if (contacts.length > 0) {
+                      return (
+                        <div className="space-y-3">
+                          {contacts.map((contact, idx) => (
+                            <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                              {contact.title && (
+                                <div className="font-medium text-slate-800 mb-1">
+                                  {contact.title}
+                                </div>
+                              )}
+                              {contact.email && (
+                                <a
+                                  href={`mailto:${contact.email}`}
+                                  className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:underline text-sm"
+                                >
+                                  <Mail className="w-4 h-4" />
+                                  {contact.email}
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    } else if (hospital.contactEmails) {
+                      return (
+                        <div className="space-y-2">
+                          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Email</div>
+                          <div className="flex flex-wrap gap-2">
+                            {hospital.contactEmails.split(',').map((email, idx) => (
+                              <a
+                                key={idx}
+                                href={`mailto:${email.trim()}`}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm"
+                              >
+                                <Mail className="w-3 h-3" />
+                                {email.trim()}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </CardContent>
               </Card>
             )}

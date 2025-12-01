@@ -15,30 +15,30 @@ export default function DoctorCard({ doctor }) {
   };
 
   const workPermitStyles = {
-    EU_CITIZEN: "bg-green-100 text-green-800 border-green-200",
-    WORK_PERMIT: "bg-blue-100 text-blue-800 border-blue-200",
-    VISA_REQUIRED: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    PENDING: "bg-slate-100 text-slate-800 border-slate-200"
+    EU_CITIZEN: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+    WORK_PERMIT: "bg-primary/20 text-primary border-primary/30",
+    VISA_REQUIRED: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+    PENDING: "bg-secondary text-muted-foreground border-border"
   };
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 bg-white/80 backdrop-blur-sm border-slate-200 flex flex-col">
+    <Card className="hover:shadow-lg transition-all duration-200 bg-card backdrop-blur-sm border-border hover:border-primary/50 flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-3 mb-3">
-          <Avatar className="w-12 h-12 border-2 border-white shadow-md">
+          <Avatar className="w-12 h-12 border-2 border-border shadow-md">
             <AvatarImage 
               src={doctor.photoUrl || getAnimalAvatar(doctor.id, `${doctor.firstName} ${doctor.lastName}`)} 
               alt={`${doctor.firstName} ${doctor.lastName}`} 
             />
-            <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold">
+            <AvatarFallback className="bg-gradient-to-r from-primary to-violet-500 text-primary-foreground font-semibold">
               {getInitials(doctor.firstName, doctor.lastName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-slate-900 truncate">
+            <h3 className="font-semibold text-foreground truncate">
               {doctor.firstName} {doctor.lastName}
             </h3>
-            <p className="text-sm text-slate-500 truncate">{doctor.email}</p>
+            <p className="text-sm text-muted-foreground truncate">{doctor.email}</p>
           </div>
         </div>
         
@@ -48,13 +48,13 @@ export default function DoctorCard({ doctor }) {
             <Badge 
               key={idx} 
               variant="secondary" 
-              className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+              className="text-xs bg-primary/10 text-primary border-primary/20"
             >
               {specialty}
             </Badge>
           ))}
           {doctor.specialties?.length > 2 && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs border-border">
               +{doctor.specialties.length - 2}
             </Badge>
           )}
@@ -64,15 +64,15 @@ export default function DoctorCard({ doctor }) {
       <CardContent className="pt-0 flex-grow flex flex-col justify-between">
         <div className="space-y-2 mb-4 text-sm">
           {doctor.experienceYears != null && (
-            <div className="flex items-center gap-2 text-slate-600">
-              <Briefcase className="w-4 h-4 text-slate-400" />
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Briefcase className="w-4 h-4" />
               <span>{doctor.experienceYears} year{doctor.experienceYears !== 1 ? 's' : ''} experience</span>
             </div>
           )}
           
           {doctor.desiredStates?.length > 0 && (
-            <div className="flex items-center gap-2 text-slate-600">
-              <MapPin className="w-4 h-4 text-slate-400" />
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="w-4 h-4" />
               <span className="truncate">Wants: {doctor.desiredStates.join(', ')}</span>
             </div>
           )}

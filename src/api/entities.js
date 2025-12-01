@@ -1,25 +1,24 @@
+// Unified Data Layer - supports both Supabase and localStorage
+import {
+  Hospital,
+  Doctor,
+  Job,
+  Match,
+  Application,
+  SeedUrl,
+  EmailLog,
+  EmailConfig,
+  EmailTemplate,
+  getStorageMode
+} from '@/lib/dataLayer';
+
 import { base44 } from './base44Client';
 
+// Re-export entities from data layer
+export { Hospital, Doctor, Job, Match, Application, SeedUrl, EmailLog, EmailConfig, EmailTemplate };
 
-export const Doctor = base44.entities.Doctor;
+// Export storage mode helper
+export { getStorageMode };
 
-export const Job = base44.entities.Job;
-
-export const SeedUrl = base44.entities.SeedUrl;
-
-export const Match = base44.entities.Match;
-
-export const EmailLog = base44.entities.EmailLog;
-
-export const Hospital = base44.entities.Hospital;
-
-export const Application = base44.entities.Application;
-
-export const EmailConfig = base44.entities.EmailConfig;
-
-export const EmailTemplate = base44.entities.EmailTemplate;
-
-
-
-// auth sdk:
+// Auth SDK (still uses mock for now)
 export const User = base44.auth;

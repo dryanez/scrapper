@@ -53,15 +53,16 @@ export default function Dashboard() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Don't use server-side seniority filter - filter client-side for more permissive matching
       const filters = { isActive: true };
       if (specialtyFilter) filters.specialty = specialtyFilter;
-      if (seniorityFilter) filters.seniority = seniorityFilter;
+      // Removed: if (seniorityFilter) filters.seniority = seniorityFilter;
       
       // Fetch jobs with maximum allowed limit of 10000 based on server-side filters
       // For search and state, we'll filter client-side since the API filter syntax is unclear for complex queries
       const allJobs = await Job.filter(filters, "-created_date", 10000);
       
-      // Apply client-side filtering for search and states
+      // Apply client-side filtering for search, states, and seniority
       let filteredJobs = allJobs;
       
       if (searchTerm) {
@@ -74,6 +75,33 @@ export default function Dashboard() {
       
       if (selectedStates.length > 0) {
         filteredJobs = filteredJobs.filter(job => selectedStates.includes(job.state));
+      }
+
+      // Permissive seniority filtering - search in title text, not just seniority field
+      if (seniorityFilter) {
+        filteredJobs = filteredJobs.filter(job => {
+          const titleLower = job.title?.toLowerCase() || '';
+          const seniorityLower = job.seniority?.toLowerCase() || '';
+          const filterLower = seniorityFilter.toLowerCase();
+          
+          // Check if seniority field matches (including combined like "Assistenzarzt/Facharzt")
+          if (seniorityLower.includes(filterLower)) return true;
+          
+          // Also check title text for more permissive matching
+          switch (seniorityFilter) {
+            case 'Assistenzarzt':
+              return titleLower.includes('assistenzarzt') || titleLower.includes('assistenzärztin') ||
+                     titleLower.includes('arzt in weiterbildung') || titleLower.includes('ärztin in weiterbildung');
+            case 'Facharzt':
+              return titleLower.includes('facharzt') || titleLower.includes('fachärztin');
+            case 'Oberarzt':
+              return titleLower.includes('oberarzt') || titleLower.includes('oberärztin');
+            case 'Chefarzt':
+              return titleLower.includes('chefarzt') || titleLower.includes('chefärztin');
+            default:
+              return true;
+          }
+        });
       }
 
       const limit = itemsPerPage === 'all' ? filteredJobs.length : parseInt(itemsPerPage);
@@ -247,17 +275,17 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="flex h-screen bg-background">
       {/* Main Content - Job List */}
       <div className="flex-1 flex flex-col">
         {/* Jobs Header */}
-        <div className="p-6 bg-white/95 backdrop-blur-sm border-b border-slate-200/60">
+        <div className="p-6 bg-card/80 backdrop-blur-sm border-b border-border/50">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">
+              <h2 className="text-xl font-semibold text-foreground">
                 Available Positions ({totalJobs})
               </h2>
-              <p className="text-slate-500 text-sm mt-1">
+              <p className="text-muted-foreground text-sm mt-1">
                 {selectedStates.length > 0 ?
                   `Filtered by ${selectedStates.map(s => GERMAN_STATES[s]).join(', ')}` :
                   'All regions'
@@ -266,12 +294,12 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-2">
               <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search jobs, hospitals..."
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10 bg-slate-50 border-slate-200"
+                  className="pl-10 bg-secondary/50 border-border"
                 />
               </div>
 
@@ -375,7 +403,7 @@ export default function Dashboard() {
                   <Badge
                     key={state}
                     variant="secondary"
-                    className="bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer"
+                    className="bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer"
                     onClick={() => setSelectedStates(prev => prev.filter(s => s !== state))}
                   >
                     {GERMAN_STATES[state]}
@@ -390,7 +418,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-600">Show:</span>
+                <span className="text-muted-foreground">Show:</span>
                 <Select 
                   value={itemsPerPage.toString()} 
                   onValueChange={(value) => handleItemsPerPageChange(value === 'all' ? 'all' : parseInt(value))}
@@ -407,11 +435,11 @@ export default function Dashboard() {
                     <SelectItem value="all">All</SelectItem>
                   </SelectContent>
                 </Select>
-                <span className="text-slate-600">jobs</span>
+                <span className="text-muted-foreground">jobs</span>
               </div>
 
               {itemsPerPage !== 'all' && (
-                <div className="text-sm text-slate-500">
+                <div className="text-sm text-muted-foreground">
                   Showing {(currentPage - 1) * parseInt(itemsPerPage) + 1}-{Math.min(currentPage * parseInt(itemsPerPage), totalJobs)} of {totalJobs}
                 </div>
               )}
@@ -474,16 +502,16 @@ export default function Dashboard() {
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <Card className="h-40 bg-slate-100 mb-4" />
+                <Card className="h-40 bg-secondary/50 mb-4" />
               </div>
             ))
           ) : currentJobs.length === 0 ? (
-            <Card className="p-12 text-center">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Briefcase className="w-8 h-8 text-slate-400" />
+            <Card className="p-12 text-center bg-card border-border">
+              <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                <Briefcase className="w-8 h-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No jobs found</h3>
-              <p className="text-slate-500">Try adjusting your filters or search terms</p>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No jobs found</h3>
+              <p className="text-muted-foreground">Try adjusting your filters or search terms</p>
             </Card>
           ) : (
             currentJobs.map((job) => (
@@ -499,7 +527,7 @@ export default function Dashboard() {
 
         {/* Bottom pagination (if needed) */}
         {itemsPerPage !== 'all' && totalPages > 1 && currentJobs.length > 0 && (
-          <div className="p-4 bg-white/95 backdrop-blur-sm border-t border-slate-200/60">
+          <div className="p-4 bg-card/80 backdrop-blur-sm border-t border-border/50">
             <div className="flex items-center justify-center gap-2">
               <Button 
                 variant="outline" 
@@ -510,7 +538,7 @@ export default function Dashboard() {
                 Previous
               </Button>
               
-              <span className="text-sm text-slate-600 px-4">
+              <span className="text-sm text-muted-foreground px-4">
                 Page {currentPage} of {totalPages}
               </span>
               
@@ -528,46 +556,46 @@ export default function Dashboard() {
       </div>
 
       {/* Right Panel - Matching Doctors */}
-      <div className="w-96 border-l border-slate-200/60 bg-white/95 backdrop-blur-sm flex flex-col">
+      <div className="w-96 border-l border-border/50 bg-card/80 backdrop-blur-sm flex flex-col">
         {selectedJob ? (
           <>
             {/* Job Summary */}
-            <div className="p-6 border-b border-slate-200/60">
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+            <div className="p-6 border-b border-border/50">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
                 {selectedJob.title}
               </h3>
-              <p className="text-slate-600 text-sm mb-3">{selectedJob.hospitalName}</p>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
+              <p className="text-muted-foreground text-sm mb-3">{selectedJob.hospitalName}</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="w-4 h-4" />
                 {selectedJob.city}, {GERMAN_STATES[selectedJob.state]}
               </div>
               <div className="flex gap-2 mt-3">
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                <Badge variant="secondary" className="bg-primary/20 text-primary">
                   {selectedJob.specialty}
                 </Badge>
-                <Badge variant="outline">
+                <Badge variant="outline" className="border-border">
                   {selectedJob.seniority}
                 </Badge>
               </div>
             </div>
 
             {/* Matching Doctors Header */}
-            <div className="p-4 border-b border-slate-200/60 bg-slate-50/50">
-              <h4 className="font-semibold text-slate-900 flex items-center gap-2">
+            <div className="p-4 border-b border-border/50 bg-secondary/30">
+              <h4 className="font-semibold text-foreground flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 Matching Doctors ({getMatchedDoctors().length})
               </h4>
-              <p className="text-xs text-slate-500 mt-1">Ranked by compatibility</p>
+              <p className="text-xs text-muted-foreground mt-1">Ranked by compatibility</p>
             </div>
 
             {/* Doctors List */}
             <div className="flex-1 overflow-y-auto">
               {getMatchedDoctors().length === 0 ? (
                 <div className="p-8 text-center">
-                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Users className="w-6 h-6 text-slate-400" />
+                  <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Users className="w-6 h-6 text-muted-foreground" />
                   </div>
-                  <p className="text-slate-500 text-sm">No matching doctors found</p>
+                  <p className="text-muted-foreground text-sm">No matching doctors found</p>
                 </div>
               ) : (
                 <div className="p-4 space-y-3">
@@ -585,11 +613,11 @@ export default function Dashboard() {
         ) : (
           <div className="flex-1 flex items-center justify-center p-8 text-center">
             <div>
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Briefcase className="w-8 h-8 text-slate-400" />
+              <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                <Briefcase className="w-8 h-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">Select a Job</h3>
-              <p className="text-slate-500 text-sm">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Select a Job</h3>
+              <p className="text-muted-foreground text-sm">
                 Choose a position to see matching doctors
               </p>
             </div>

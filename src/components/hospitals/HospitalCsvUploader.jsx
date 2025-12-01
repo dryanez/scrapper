@@ -1,12 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Upload, FileSpreadsheet, RefreshCw, CheckCircle, AlertTriangle } from "lucide-react";
+import { Upload, FileSpreadsheet, RefreshCw, CheckCircle, AlertTriangle, Download, FolderOpen, Trash2 } from "lucide-react";
 import { Hospital } from "@/api/entities";
+
+// Storage key for saved CSVs
+const CSV_STORAGE_KEY = 'med_match_uploaded_csvs';
 
 const GERMAN_STATES = {
   "BW": "Baden-Württemberg",
@@ -34,6 +37,57 @@ export default function HospitalCsvUploader({ onSuccess, setAlert }) {
   const [processingMessage, setProcessingMessage] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSummary, setUploadSummary] = useState(null);
+  const [savedCsvs, setSavedCsvs] = useState({});
+
+  // Load saved CSVs on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(CSV_STORAGE_KEY);
+    if (stored) {
+      setSavedCsvs(JSON.parse(stored));
+    }
+  }, []);
+
+  // Save CSV to localStorage
+  const saveCsvToStorage = (stateCode, fileName, content) => {
+    const updated = {
+      ...savedCsvs,
+      [stateCode]: {
+        fileName,
+        content,
+        uploadedAt: new Date().toISOString(),
+        stateName: GERMAN_STATES[stateCode]
+      }
+    };
+    localStorage.setItem(CSV_STORAGE_KEY, JSON.stringify(updated));
+    setSavedCsvs(updated);
+  };
+
+  // Download a single CSV
+  const downloadCsv = (stateCode) => {
+    const csv = savedCsvs[stateCode];
+    if (!csv) return;
+    
+    const blob = new Blob([csv.content], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${stateCode}_${csv.stateName.replace(/[^a-zA-Z]/g, '_')}.csv`;
+    link.click();
+  };
+
+  // Download all CSVs as separate files
+  const downloadAllCsvs = () => {
+    Object.keys(savedCsvs).forEach((stateCode, index) => {
+      setTimeout(() => downloadCsv(stateCode), index * 500);
+    });
+  };
+
+  // Delete a saved CSV
+  const deleteCsv = (stateCode) => {
+    const updated = { ...savedCsvs };
+    delete updated[stateCode];
+    localStorage.setItem(CSV_STORAGE_KEY, JSON.stringify(updated));
+    setSavedCsvs(updated);
+  };
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -274,6 +328,10 @@ export default function HospitalCsvUploader({ onSuccess, setAlert }) {
         setProcessingMessage(`Saving ${hospitalsToCreate.length} hospitals...`);
         setUploadProgress(95);
         await Hospital.bulkCreate(hospitalsToCreate);
+        
+        // Save CSV to localStorage for future reference
+        saveCsvToStorage(selectedState, file.name, text);
+        console.log(`📁 CSV saved to localStorage for state: ${selectedState}`);
       }
       
       setUploadProgress(100);
@@ -298,6 +356,72 @@ export default function HospitalCsvUploader({ onSuccess, setAlert }) {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Saved CSVs Section */}
+      {Object.keys(savedCsvs).length > 0 && (
+        <Card className="bg-slate-800 border-slate-700">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between text-white">
+              <span className="flex items-center gap-2">
+                <FolderOpen className="w-5 h-5 text-emerald-400" />
+                Saved CSV Files ({Object.keys(savedCsvs).length})
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={downloadAllCsvs}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download All
+              </Button>
+            </CardTitle>
+            <p className="text-sm text-slate-400">
+              These CSVs are saved locally and can be exported for the Python script.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(savedCsvs).map(([stateCode, csv]) => (
+                <div 
+                  key={stateCode} 
+                  className="flex items-center justify-between p-3 bg-slate-700 rounded-lg border border-slate-600"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-white truncate">{csv.stateName}</div>
+                    <div className="text-xs text-slate-400 truncate">{csv.fileName}</div>
+                    <div className="text-xs text-slate-500">
+                      {new Date(csv.uploadedAt).toLocaleDateString('de-DE')}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 ml-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => downloadCsv(stateCode)}
+                      className="text-emerald-400 hover:text-emerald-300 hover:bg-slate-600"
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => deleteCsv(stateCode)}
+                      className="text-red-400 hover:text-red-300 hover:bg-slate-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500 mt-4">
+              💡 Tip: Download these CSVs and place them in <code className="bg-slate-700 px-1 rounded">data/csv/</code> folder, 
+              then run <code className="bg-slate-700 px-1 rounded">python3 scripts/generate_seed_hospitals.py</code> to regenerate seed data.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* State Selection */}
       <Card>
         <CardHeader>

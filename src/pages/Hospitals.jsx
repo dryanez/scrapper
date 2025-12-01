@@ -20,7 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Building2, MapPin, RefreshCw, BrainCircuit, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
+import { Plus, Search, Building2, MapPin, RefreshCw, BrainCircuit, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Trash2, RotateCcw } from "lucide-react";
+import { loadSeedHospitals } from "@/data/seedHospitals";
 
 import HospitalForm from "../components/hospitals/HospitalForm";
 import HospitalCsvUploader from "../components/hospitals/HospitalCsvUploader";
@@ -401,22 +402,40 @@ If no jobs are found, return an empty array: { "jobs_found": [] }`;
   }, {});
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Hospital Management</h1>
-            <p className="text-slate-600">Manage hospitals across all German federal states</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Hospital Management</h1>
+            <p className="text-muted-foreground">Manage hospitals across all German federal states</p>
           </div>
-          <Button 
-            onClick={handleScanAllHospitals}
-            disabled={!!scanningHospitalId || isDeleting || hospitals.filter(h => h.careerPageUrl).length === 0}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <BrainCircuit className="w-4 h-4 mr-2" />
-            Scan All Hospitals
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={async () => {
+                setIsLoading(true);
+                localStorage.removeItem('med_match_hospital');
+                localStorage.removeItem('med_match_job');
+                await loadSeedHospitals(true);
+                await loadHospitals();
+                setAlert({ type: "success", message: "Reloaded all hospitals with contact info from seed data!" });
+              }}
+              disabled={!!scanningHospitalId || isDeleting}
+              variant="outline"
+              className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reload Seed Data
+            </Button>
+            <Button 
+              onClick={handleScanAllHospitals}
+              disabled={!!scanningHospitalId || isDeleting || hospitals.filter(h => h.careerPageUrl).length === 0}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <BrainCircuit className="w-4 h-4 mr-2" />
+              Scan All Hospitals
+            </Button>
+          </div>
         </div>
         
         {scanningHospitalId && (

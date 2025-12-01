@@ -16,12 +16,14 @@ import {
   CheckCircle,
   RefreshCw,
   BrainCircuit,
+  Search,
 } from "lucide-react";
 
 import CsvUploader from "../components/scraping/CsvUploader";
 import SeedUrlList from "../components/scraping/SeedUrlList";
 import HospitalGrid from "../components/scraping/HospitalGrid";
 import HospitalJobsDialog from "../components/scraping/HospitalJobsDialog";
+import HospitalJobScanner from "../components/scraping/HospitalJobScanner";
 import { classifySpecialty } from "../components/utils/SpecialtyClassifier";
 
 export default function Scraping() {
@@ -32,7 +34,7 @@ export default function Scraping() {
   const [scanProgress, setScanProgress] = useState(0);
   const [currentScanActivity, setCurrentScanActivity] = useState("");
   const [alert, setAlert] = useState(null);
-  const [activeTab, setActiveTab] = useState("urls");
+  const [activeTab, setActiveTab] = useState("scanner");
   const [selectedHospital, setSelectedHospital] = useState(null);
 
   useEffect(() => {
@@ -437,7 +439,10 @@ If no jobs are found, return an empty array: { "jobs_found": [] }`;
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
+            <TabsTrigger value="scanner" className="flex items-center gap-2">
+              <Search className="w-4 h-4" /> Job Scanner
+            </TabsTrigger>
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="w-4 h-4" /> Upload URLs
             </TabsTrigger>
@@ -448,6 +453,16 @@ If no jobs are found, return an empty array: { "jobs_found": [] }`;
               <Building2 className="w-4 h-4" /> Hospitals ({hospitals.length})
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="scanner">
+            <HospitalJobScanner 
+              hospitals={hospitals} 
+              onJobsScraped={() => {
+                loadHospitals();
+                setAlert({ type: "success", message: "Jobs saved successfully!" });
+              }} 
+            />
+          </TabsContent>
 
           <TabsContent value="upload">
             <CsvUploader onUpload={handleCsvUpload} isUploading={isUploading} onManualAdd={handleManualUrlAdd} />

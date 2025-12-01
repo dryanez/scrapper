@@ -1,20 +1,18 @@
-
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { User } from "@/api/entities";
 import {
-  Heart,
   MapPin,
   Users,
   Briefcase,
   Mail,
-  Settings,
-  Search,
   Globe,
   Building2,
-  FlaskConical // Added FlaskConical icon
+  Database,
+  ChevronRight,
+  Activity,
+  TrendingUp
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,24 +55,49 @@ const navigationItems = [
     description: "Application tracking"
   },
   {
+    title: "Job Database",
+    url: createPageUrl("JobDatabase"),
+    icon: Database,
+    description: "Manage all jobs"
+  },
+  {
     title: "Scraping",
     url: createPageUrl("Scraping"),
     icon: Globe,
     description: "Manage URLs"
-  },
-  {
-    title: "Email Settings",
-    url: createPageUrl("EmailSettings"),
-    icon: Settings,
-    description: "Configure Resend"
-  },
-  { // New navigation item added
-    title: "AMEOS Scraper",
-    url: createPageUrl("AmeosScraper"),
-    icon: FlaskConical,
-    description: "Specialized Agent"
   }
 ];
+
+function StatCard({ icon: Icon, label, value, color }) {
+  const colorClasses = {
+    cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+    orange: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+    emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    violet: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+  };
+
+  const iconBg = {
+    cyan: 'bg-cyan-500/20 text-cyan-400',
+    orange: 'bg-orange-500/20 text-orange-400',
+    emerald: 'bg-emerald-500/20 text-emerald-400',
+    violet: 'bg-violet-500/20 text-violet-400',
+  };
+
+  return (
+    <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 hover:scale-[1.02] cursor-default ${colorClasses[color]}`}>
+      <div className={`p-2 rounded-lg ${iconBg[color]}`}>
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</div>
+        <div className="text-lg font-bold text-foreground flex items-center gap-1">
+          {value.toLocaleString()}
+          {value > 0 && <TrendingUp className="w-3 h-3 text-emerald-400" />}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -129,135 +152,130 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50">
-        {/* Custom Sidebar */}
-        <Sidebar className="border-r border-slate-200/60 backdrop-blur-sm bg-white/95">
-          <SidebarHeader className="border-b border-slate-200/60 p-6">
+      <div className="min-h-screen flex w-full bg-background">
+        <Sidebar className="border-r border-border/50 bg-sidebar">
+          <SidebarHeader className="border-b border-border/50 p-5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                <Heart className="w-6 h-6 text-white" />
+              <div className="relative">
+                <img 
+                  src="https://www.vhr-referenten.de/images/61385cba3b8ef45deec38604_logo.png" 
+                  alt="VHR Logo" 
+                  className="h-10 w-auto"
+                />
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">MedMatch</h2>
-                <p className="text-sm text-slate-500">Medical Recruiting Platform</p>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-primary uppercase tracking-wider">Medical</span>
+                <span className="text-lg font-bold text-foreground">Recruiting Platform</span>
               </div>
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="p-4">
+          <SidebarContent className="p-3">
             <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-3">
+              <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest px-3 py-3">
                 Navigation
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="space-y-1">
-                  {navigationItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        className={`group hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 rounded-xl px-3 py-3 ${
-                          location.pathname === item.url ? 'bg-blue-50 text-blue-700 shadow-sm' : ''
-                        }`}
+                  {navigationItems.map((item, index) => {
+                    const isActive = location.pathname === item.url;
+                    const activeClass = isActive 
+                      ? 'bg-primary/10 text-primary border border-primary/20' 
+                      : 'hover:bg-secondary/80 text-muted-foreground hover:text-foreground';
+                    const iconClass = isActive 
+                      ? 'bg-primary/20 text-primary' 
+                      : 'bg-secondary/50 text-muted-foreground group-hover:bg-secondary group-hover:text-foreground';
+                    const textClass = isActive ? 'text-primary' : '';
+                    const chevronClass = isActive ? 'text-primary opacity-100' : 'opacity-0 group-hover:opacity-50';
+                    
+                    return (
+                      <SidebarMenuItem 
+                        key={item.title} 
+                        className="animate-slide-in-left" 
+                        style={{ animationDelay: `${index * 0.05}s` }}
                       >
-                        <Link to={item.url} className="flex items-center gap-3">
-                          <item.icon className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-                          <div className="flex-1">
-                            <div className="font-medium">{item.title}</div>
-                            <div className="text-xs text-slate-500 group-hover:text-blue-600">
-                              {item.description}
+                        <SidebarMenuButton
+                          asChild
+                          className={`group relative overflow-hidden rounded-xl px-3 py-3 transition-all duration-300 ${activeClass}`}
+                        >
+                          <Link to={item.url} className="flex items-center gap-3">
+                            {isActive && (
+                              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
+                            )}
+                            <div className={`p-2 rounded-lg transition-all duration-300 ${iconClass}`}>
+                              <item.icon className="w-4 h-4" />
                             </div>
-                          </div>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                            <div className="flex-1 min-w-0">
+                              <div className={`font-medium text-sm ${textClass}`}>{item.title}</div>
+                              <div className="text-[10px] text-muted-foreground truncate">
+                                {item.description}
+                              </div>
+                            </div>
+                            <ChevronRight className={`w-4 h-4 transition-all duration-300 ${chevronClass}`} />
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
-            <SidebarGroup className="mt-8">
-              <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-3">
-                Quick Stats
+            <SidebarGroup className="mt-6">
+              <SidebarGroupLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest px-3 py-3 flex items-center gap-2">
+                <Activity className="w-3 h-3" />
+                Live Stats
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <div className="px-3 py-2 space-y-3">
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                      <Users className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-slate-600">Active Doctors</div>
-                      <div className="font-semibold text-slate-900">{stats.activeDoctors}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                      <Building2 className="w-4 h-4 text-orange-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-slate-600">Total Hospitals</div>
-                      <div className="font-semibold text-slate-900">{stats.totalHospitals}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Briefcase className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-slate-600">Open Positions</div>
-                      <div className="font-semibold text-slate-900">{stats.openPositions}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <Mail className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-slate-600">Applications Sent</div>
-                      <div className="font-semibold text-slate-900">{stats.applicationsSent}</div>
-                    </div>
-                  </div>
+                <div className="px-2 py-2 space-y-2">
+                  <StatCard icon={Users} label="Active Doctors" value={stats.activeDoctors} color="cyan" />
+                  <StatCard icon={Building2} label="Total Hospitals" value={stats.totalHospitals} color="orange" />
+                  <StatCard icon={Briefcase} label="Open Positions" value={stats.openPositions} color="emerald" />
+                  <StatCard icon={Mail} label="Applications" value={stats.applicationsSent} color="violet" />
                 </div>
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter className="border-t border-slate-200/60 p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-slate-400 to-slate-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">
+          <SidebarFooter className="border-t border-border/50 p-4">
+            <div className="flex items-center gap-3 p-2 rounded-xl bg-secondary/30 transition-all duration-300 hover:bg-secondary/50">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                <span className="text-primary-foreground font-bold text-sm">
                   {currentUser?.full_name?.[0]?.toUpperCase() || 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-900 text-sm truncate">
+                <p className="font-semibold text-foreground text-sm truncate">
                   {currentUser?.full_name || 'User'}
                 </p>
-                <p className="text-xs text-slate-500 truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {currentUser?.email || 'Loading...'}
                 </p>
               </div>
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
           </SidebarFooter>
         </Sidebar>
 
-        {/* Main content area */}
         <main className="flex-1 flex flex-col min-w-0">
-          {/* Mobile header */}
-          <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200/60 px-6 py-4 lg:hidden">
+          <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 px-6 py-4 lg:hidden">
             <div className="flex items-center gap-4">
-              <SidebarTrigger className="hover:bg-slate-100 p-2 rounded-lg transition-colors duration-200" />
-              <h1 className="text-xl font-bold text-slate-900">MedMatch</h1>
+              <SidebarTrigger className="hover:bg-secondary p-2 rounded-lg transition-all duration-200" />
+              <img 
+                src="https://www.vhr-referenten.de/images/61385cba3b8ef45deec38604_logo.png" 
+                alt="VHR Logo" 
+                className="h-8 w-auto"
+              />
             </div>
           </header>
 
-          {/* Content */}
           <div className="flex-1 overflow-auto">
-            {children}
+            <div className="animate-fade-in">
+              {children}
+            </div>
           </div>
         </main>
       </div>
     </SidebarProvider>
   );
 }
-

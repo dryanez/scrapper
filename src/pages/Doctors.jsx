@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Search, Users, Upload, CheckCircle, AlertCircle, Activity, BellRing, UserX, FileClock } from "lucide-react";
+import { Plus, Search, Users, Upload, CheckCircle, AlertCircle, Activity, BellRing, UserX, FileClock, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import DoctorCard from "../components/doctors/DoctorCard";
@@ -18,6 +18,7 @@ import ApplicationStatusDialog from "../components/applications/ApplicationStatu
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAnimalAvatar } from "../components/utils/AvatarGenerator";
 import { Badge } from "@/components/ui/badge";
+import { loadSeedDoctors } from "@/data/seedDoctors";
 
 
 export default function Doctors() {
@@ -35,6 +36,11 @@ export default function Doctors() {
   });
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+
+  // Load seed doctors on first load
+  useEffect(() => {
+    loadSeedDoctors();
+  }, []);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -113,12 +119,28 @@ export default function Doctors() {
             <h1 className="text-3xl font-bold text-slate-900 mb-2">Doctor Profiles</h1>
             <p className="text-slate-600">Manage your medical professional database</p>
           </div>
-          <Link to={createPageUrl("DoctorForm")}>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Doctor Manually
+          <div className="flex gap-2">
+            <Button 
+              onClick={async () => {
+                setIsLoading(true);
+                localStorage.removeItem('med_match_doctor');
+                await loadSeedDoctors(true);
+                await loadData();
+                setAlert({ type: "success", message: "Reloaded 26 doctors from seed data!" });
+              }}
+              variant="outline"
+              className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reload Seed Data
             </Button>
-          </Link>
+            <Link to={createPageUrl("DoctorForm")}>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Doctor Manually
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {alert && (
