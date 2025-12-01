@@ -135,7 +135,9 @@ export default function HospitalDetail() {
     });
 
     try {
-      setCurrentScanActivity(`Scanning ${new URL(urlToScan).hostname} for Assistenzarzt jobs...`);
+      let hostname = urlToScan;
+      try { hostname = new URL(urlToScan).hostname; } catch {}
+      setCurrentScanActivity(`Scanning ${hostname} for Assistenzarzt jobs...`);
       setScanProgress(25);
       
       const isAmeos = urlToScan.toLowerCase().includes('ameos');

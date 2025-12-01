@@ -43,7 +43,12 @@ export default function ScrapingStatusBar() {
   }
 
   const progress = getScrapingProgress();
-  const currentHostname = state.currentUrl ? new URL(state.currentUrl).hostname : '';
+  let currentHostname = '';
+  try {
+    currentHostname = state.currentUrl ? new URL(state.currentUrl).hostname : '';
+  } catch {
+    currentHostname = state.currentUrl || '';
+  }
 
   return (
     <div className="fixed bottom-4 right-4 z-50 w-96 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden">

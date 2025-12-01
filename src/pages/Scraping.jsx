@@ -182,7 +182,9 @@ export default function Scraping() {
     for (let i = 0; i < urlsToScan.length; i++) {
       const seedUrl = urlsToScan[i];
       try {
-        setCurrentScanActivity(`Scanning ${i + 1}/${urlsToScan.length}: ${new URL(seedUrl.url).hostname}...`);
+        let hostname = seedUrl.url;
+        try { hostname = new URL(seedUrl.url).hostname; } catch {}
+        setCurrentScanActivity(`Scanning ${i + 1}/${urlsToScan.length}: ${hostname}...`);
         setScanProgress((i / urlsToScan.length) * 100);
 
         const isAmeos = seedUrl.url.toLowerCase().includes('ameos');
