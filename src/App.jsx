@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import './App.css'
 import Pages from "@/pages/index.jsx"
-import { Toaster } from "@/components/ui/toaster"
 import { loadSeedHospitals } from "@/data/seedHospitals"
 
 function App() {
@@ -13,7 +12,6 @@ function App() {
   return (
     <>
       <Pages />
-      <Toaster />
     </>
   )
 }

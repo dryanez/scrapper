@@ -1,5 +1,6 @@
 import Layout from "./Layout.jsx";
 import ScrapingStatusBar from "@/components/scraping/ScrapingStatusBar";
+import { Toaster } from "@/components/ui/toaster";
 
 import Dashboard from "./Dashboard";
 
@@ -140,6 +141,7 @@ export default function Pages() {
     return (
         <Router>
             <PagesContent />
+            <Toaster />
         </Router>
     );
 }
