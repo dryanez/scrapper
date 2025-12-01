@@ -37,18 +37,43 @@ const mapColumnName = (column) => {
 // ============================================
 const createSupabaseEntity = (tableName) => {
   return {
-    list: async (orderBy = '-created_at', limit = 1000) => {
+    list: async (orderBy = '-created_at', limit = 10000) => {
       const isDesc = orderBy.startsWith('-');
       const column = mapColumnName(orderBy.replace('-', ''));
       
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .order(column, { ascending: !isDesc })
-        .limit(limit);
+      // Supabase has a max limit of 1000 per query, so we need to paginate
+      if (limit <= 1000) {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .order(column, { ascending: !isDesc })
+          .limit(limit);
+        
+        if (error) throw error;
+        return data || [];
+      }
       
-      if (error) throw error;
-      return data || [];
+      // For limits > 1000, fetch in batches
+      let allData = [];
+      let start = 0;
+      const pageSize = 1000;
+      
+      while (allData.length < limit) {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .order(column, { ascending: !isDesc })
+          .range(start, start + pageSize - 1);
+        
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        
+        allData.push(...data);
+        if (data.length < pageSize) break; // No more data
+        start += pageSize;
+      }
+      
+      return allData.slice(0, limit); // Respect the requested limit
     },
 
     filter: async (filters = {}) => {
