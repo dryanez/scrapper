@@ -1,4 +1,5 @@
 import Layout from "./Layout.jsx";
+import ScrapingStatusBar from "@/components/scraping/ScrapingStatusBar";
 
 import Dashboard from "./Dashboard";
 
@@ -89,46 +90,49 @@ function PagesContent() {
     const currentPage = _getCurrentPage(location.pathname);
     
     return (
-        <Layout currentPageName={currentPage}>
-            <Routes>            
-                
-                    <Route path="/" element={<Dashboard />} />
-                
-                
-                <Route path="/Dashboard" element={<Dashboard />} />
-                
-                <Route path="/Doctors" element={<Doctors />} />
-                
-                <Route path="/Scraping" element={<Scraping />} />
-                
-                <Route path="/JobDetails" element={<JobDetails />} />
+        <>
+            <Layout currentPageName={currentPage}>
+                <Routes>            
+                    
+                        <Route path="/" element={<Dashboard />} />
+                    
+                    
+                    <Route path="/Dashboard" element={<Dashboard />} />
+                    
+                    <Route path="/Doctors" element={<Doctors />} />
+                    
+                    <Route path="/Scraping" element={<Scraping />} />
+                    
+                    <Route path="/JobDetails" element={<JobDetails />} />
 
-                <Route path="/JobDatabase" element={<JobDatabase />} />
-                
-                <Route path="/Hospitals" element={<Hospitals />} />
-                
-                <Route path="/DoctorDetail" element={<DoctorDetail />} />
-                
-                <Route path="/EmailComposer" element={<EmailComposer />} />
-                
-                <Route path="/HospitalDetail" element={<HospitalDetail />} />
-                
-                <Route path="/HospitalCount" element={<HospitalCount />} />
-                
-                <Route path="/HospitalAnalysis" element={<HospitalAnalysis />} />
-                
-                <Route path="/Applications" element={<Applications />} />
-                
-                <Route path="/FollowUpNeeded" element={<FollowUpNeeded />} />
-                
-                <Route path="/ActiveCandidates" element={<ActiveCandidates />} />
-                
-                <Route path="/UnmatchedDoctors" element={<UnmatchedDoctors />} />
-                
-                <Route path="/DoctorMatches" element={<DoctorMatches />} />
-                
-            </Routes>
-        </Layout>
+                    <Route path="/JobDatabase" element={<JobDatabase />} />
+                    
+                    <Route path="/Hospitals" element={<Hospitals />} />
+                    
+                    <Route path="/DoctorDetail" element={<DoctorDetail />} />
+                    
+                    <Route path="/EmailComposer" element={<EmailComposer />} />
+                    
+                    <Route path="/HospitalDetail" element={<HospitalDetail />} />
+                    
+                    <Route path="/HospitalCount" element={<HospitalCount />} />
+                    
+                    <Route path="/HospitalAnalysis" element={<HospitalAnalysis />} />
+                    
+                    <Route path="/Applications" element={<Applications />} />
+                    
+                    <Route path="/FollowUpNeeded" element={<FollowUpNeeded />} />
+                    
+                    <Route path="/ActiveCandidates" element={<ActiveCandidates />} />
+                    
+                    <Route path="/UnmatchedDoctors" element={<UnmatchedDoctors />} />
+                    
+                    <Route path="/DoctorMatches" element={<DoctorMatches />} />
+                    
+                </Routes>
+            </Layout>
+            <ScrapingStatusBar />
+        </>
     );
 }
 

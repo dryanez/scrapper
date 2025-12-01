@@ -3,7 +3,6 @@ import './App.css'
 import Pages from "@/pages/index.jsx"
 import { Toaster } from "@/components/ui/toaster"
 import { loadSeedHospitals } from "@/data/seedHospitals"
-import ScrapingStatusBar from "@/components/scraping/ScrapingStatusBar"
 
 function App() {
   // Load seed data on app startup
@@ -15,7 +14,6 @@ function App() {
     <>
       <Pages />
       <Toaster />
-      <ScrapingStatusBar />
     </>
   )
 }
