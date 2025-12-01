@@ -126,7 +126,12 @@ const createSupabaseEntity = (tableName) => {
       let query = supabase.from(tableName).select('*');
       
       Object.entries(filters).forEach(([key, value]) => {
-        const mappedKey = mapColumnName(key);
+        // First check explicit mapping, then convert camelCase to snake_case
+        let mappedKey = mapColumnName(key);
+        // If not in explicit mapping, convert camelCase to snake_case
+        if (mappedKey === key && !key.includes('_')) {
+          mappedKey = toSnakeCase(key);
+        }
         if (Array.isArray(value)) {
           query = query.in(mappedKey, value);
         } else {

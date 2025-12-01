@@ -579,10 +579,20 @@ export default function JobDetails() {
                   <div>
                     <div className="text-sm text-slate-600">Posted</div>
                     <div className="font-medium">
-                      {job.postedAt 
-                        ? format(new Date(job.postedAt), 'MMM d, yyyy')
-                        : format(new Date(job.created_date), 'MMM d, yyyy')
-                      }
+                      {(() => {
+                        const dateValue = job.postedAt || job.posted_at || job.createdAt || job.created_at || job.created_date || job.scraped_at;
+                        if (dateValue) {
+                          try {
+                            const date = new Date(dateValue);
+                            if (!isNaN(date.getTime())) {
+                              return format(date, 'MMM d, yyyy');
+                            }
+                          } catch (e) {
+                            // Fall through
+                          }
+                        }
+                        return 'Recently';
+                      })()}
                     </div>
                   </div>
                 </div>
