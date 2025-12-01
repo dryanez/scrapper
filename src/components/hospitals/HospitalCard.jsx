@@ -151,6 +151,28 @@ export default function HospitalCard({ hospital, jobCount, latestJob, onUpdate, 
               {jobCount} Job{jobCount !== 1 ? 's' : ''}
             </Badge>
             
+            {/* No Career URL Badge */}
+            {!hasCareerUrl && (
+              <Badge 
+                variant="outline" 
+                className="text-xs bg-red-500/20 text-red-400 border-red-500/30"
+                title="No career page URL found during scraping"
+              >
+                ⚠ No URL
+              </Badge>
+            )}
+            
+            {/* Last Scraped Badge */}
+            {hasCareerUrl && lastScrapedText && (
+              <Badge 
+                variant="outline" 
+                className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30"
+                title={`Last scraped: ${lastScrapedText}`}
+              >
+                ✓ Scraped {lastScrapedText}
+              </Badge>
+            )}
+            
             {/* Portal Type Badge */}
             {portalInfo && (
               <Badge 
