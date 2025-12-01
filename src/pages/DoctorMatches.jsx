@@ -355,10 +355,18 @@ export default function DoctorMatches() {
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>
-                        Posted: {job.postedAt 
-                          ? format(new Date(job.postedAt), 'MMM d, yyyy')
-                          : format(new Date(job.created_date), 'MMM d, yyyy')
-                        }
+                        Posted: {(() => {
+                          const dateValue = job.postedAt || job.posted_at || job.created_at || job.created_date || job.scraped_at;
+                          if (dateValue) {
+                            try {
+                              const date = new Date(dateValue);
+                              if (!isNaN(date.getTime())) {
+                                return format(date, 'MMM d, yyyy');
+                              }
+                            } catch (e) {}
+                          }
+                          return 'Recently';
+                        })()}
                       </span>
                     </div>
                     <Badge variant="outline" className="text-xs">

@@ -585,7 +585,24 @@ Your entire response must be a single JSON object. Do not include any text, expl
                     Open Positions ({mainJobs.length})
                   </div>
                   <Badge variant="outline">
-                    Latest: {jobs.length > 0 ? format(new Date(jobs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0].created_date), 'MMM d') : 'None'}
+                    Latest: {(() => {
+                      if (jobs.length === 0) return 'None';
+                      const sortedJobs = [...jobs].sort((a, b) => {
+                        const dateA = new Date(b.created_at || b.created_date || b.scraped_at || 0);
+                        const dateB = new Date(a.created_at || a.created_date || a.scraped_at || 0);
+                        return dateA - dateB;
+                      });
+                      const latestDate = sortedJobs[0]?.created_at || sortedJobs[0]?.created_date || sortedJobs[0]?.scraped_at;
+                      if (latestDate) {
+                        try {
+                          const date = new Date(latestDate);
+                          if (!isNaN(date.getTime())) {
+                            return format(date, 'MMM d');
+                          }
+                        } catch (e) {}
+                      }
+                      return 'Recently';
+                    })()}
                   </Badge>
                 </CardTitle>
               </CardHeader>

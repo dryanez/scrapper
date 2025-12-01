@@ -104,15 +104,26 @@ export default function SeedUrlList({ seedUrls, onUpdate, onScanUrl, isScanning 
             <CardContent className="pt-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 text-sm text-slate-600">
-                  {seedUrl.lastScrapedAt && (
+                  {(seedUrl.lastScrapedAt || seedUrl.last_scraped_at) && (
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      <span>Last scanned: {format(new Date(seedUrl.lastScrapedAt), 'MMM d, HH:mm')}</span>
+                      <span>Last scanned: {(() => {
+                        const dateValue = seedUrl.lastScrapedAt || seedUrl.last_scraped_at;
+                        if (dateValue) {
+                          try {
+                            const date = new Date(dateValue);
+                            if (!isNaN(date.getTime())) {
+                              return format(date, 'MMM d, HH:mm');
+                            }
+                          } catch (e) {}
+                        }
+                        return 'Unknown';
+                      })()}</span>
                     </div>
                   )}
-                  {seedUrl.jobsFound > 0 && (
+                  {(seedUrl.jobsFound || seedUrl.jobs_found) > 0 && (
                     <Badge variant="outline" className="text-xs">
-                      {seedUrl.jobsFound} jobs found
+                      {seedUrl.jobsFound || seedUrl.jobs_found} jobs found
                     </Badge>
                   )}
                 </div>

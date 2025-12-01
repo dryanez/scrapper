@@ -83,11 +83,22 @@ export default function HospitalJobsDialog({ hospital, open, onOpenChange }) {
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       <span>
-                        Posted: {job.postedAt ? format(new Date(job.postedAt), 'MMM d, yyyy') : 'N/A'}
+                        Posted: {(() => {
+                          const dateValue = job.postedAt || job.posted_at || job.created_at || job.created_date || job.scraped_at;
+                          if (dateValue) {
+                            try {
+                              const date = new Date(dateValue);
+                              if (!isNaN(date.getTime())) {
+                                return format(date, 'MMM d, yyyy');
+                              }
+                            } catch (e) {}
+                          }
+                          return 'Recently';
+                        })()}
                       </span>
                     </div>
-                    {job.jobDetailsUrl && (
-                        <a href={job.jobDetailsUrl} target='_blank' rel="noreferrer noopener" className="flex items-center gap-1 text-blue-600 hover:underline">
+                    {(job.jobDetailsUrl || job.job_details_url) && (
+                        <a href={job.jobDetailsUrl || job.job_details_url} target='_blank' rel="noreferrer noopener" className="flex items-center gap-1 text-blue-600 hover:underline">
                             Original <ExternalLink className="w-3 h-3" />
                         </a>
                     )}

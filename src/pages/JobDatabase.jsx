@@ -478,11 +478,18 @@ export default function JobDatabase() {
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {job.created_date 
-                          ? format(new Date(job.created_date), 'dd.MM.yyyy')
-                          : job.scraped_at 
-                            ? format(new Date(job.scraped_at), 'dd.MM.yyyy')
-                            : '-'}
+                        {(() => {
+                          const dateValue = job.created_date || job.created_at || job.scraped_at;
+                          if (dateValue) {
+                            try {
+                              const date = new Date(dateValue);
+                              if (!isNaN(date.getTime())) {
+                                return format(date, 'dd.MM.yyyy');
+                              }
+                            } catch (e) {}
+                          }
+                          return '-';
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
