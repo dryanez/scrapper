@@ -175,10 +175,21 @@ export default function JobCard({ job, isSelected, onClick }) {
           <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             <span>
-              {job.postedAt 
-                ? format(new Date(job.postedAt), 'MMM d, yyyy')
-                : format(new Date(job.created_date), 'MMM d, yyyy')
-              }
+              {(() => {
+                // Handle both camelCase and snake_case field names
+                const dateValue = job.postedAt || job.posted_at || job.createdAt || job.created_at || job.created_date || job.scraped_at;
+                if (dateValue) {
+                  try {
+                    const date = new Date(dateValue);
+                    if (!isNaN(date.getTime())) {
+                      return format(date, 'MMM d, yyyy');
+                    }
+                  } catch (e) {
+                    // Fall through to default
+                  }
+                }
+                return 'Recently';
+              })()}
             </span>
           </div>
           <Badge 
