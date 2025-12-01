@@ -34,8 +34,10 @@ const fieldMapping = {
   // Fields that don't exist in jobs table - remove them
   'hospitalLogo': null,  // Will be removed
   'status': null,        // Will be removed  
-  'portalType': 'portal_type',
-  'jobHash': 'job_hash',
+  'portalType': null,    // Will be removed - doesn't exist in jobs table
+  'jobHash': null,       // Will be removed - doesn't exist in jobs table
+  'portal_type': null,   // Will be removed - doesn't exist in jobs table
+  'job_hash': null,      // Will be removed - doesn't exist in jobs table
   'descriptionHtml': 'description_html',
   'description': 'description_html',  // description -> description_html
 };
@@ -358,7 +360,6 @@ const createLocalStorageEntity = (entityName) => {
 // ============================================
 const createEntity = (entityName, tableName) => {
   // Return an object that checks useSupabase() at runtime
-  const supabaseEntity = useSupabase() ? createSupabaseEntity(tableName) : null;
   const localEntity = createLocalStorageEntity(entityName);
   
   // Wrap each method to check at runtime
@@ -368,14 +369,8 @@ const createEntity = (entityName, tableName) => {
   methods.forEach(method => {
     entity[method] = async (...args) => {
       if (useSupabase()) {
-        try {
-          return await createSupabaseEntity(tableName)[method](...args);
-        } catch (error) {
-          console.error(`Supabase ${method} error for ${tableName}:`, error);
-          // Fallback to localStorage on error
-          console.warn('Falling back to localStorage');
-          return await localEntity[method](...args);
-        }
+        // Use Supabase only - no localStorage fallback
+        return await createSupabaseEntity(tableName)[method](...args);
       }
       return await localEntity[method](...args);
     };
