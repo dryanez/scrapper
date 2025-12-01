@@ -66,11 +66,16 @@ export default function Dashboard() {
       let filteredJobs = allJobs;
       
       if (searchTerm) {
-        filteredJobs = filteredJobs.filter(job => 
-          job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          job.hospitalName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          job.city?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        filteredJobs = filteredJobs.filter(job => {
+          const title = job.title || '';
+          const hospitalName = job.hospitalName || job.hospital_name || '';
+          const city = job.city || '';
+          return (
+            title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            hospitalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            city.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        });
       }
       
       if (selectedStates.length > 0) {

@@ -1,6 +1,9 @@
 // Comprehensive German medical specialty classifier
 export const classifySpecialty = (title, description = '') => {
-  const text = (title + ' ' + (description || '')).toLowerCase();
+  // Handle null/undefined values
+  const safeTitle = title || '';
+  const safeDescription = description || '';
+  const text = (safeTitle + ' ' + safeDescription).toLowerCase();
   
   // Create comprehensive keyword mappings for German medical specialties
   const specialtyKeywords = {

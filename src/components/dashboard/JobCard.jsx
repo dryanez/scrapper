@@ -28,7 +28,7 @@ const GERMAN_STATES = {
 
 // Same logo helper as in HospitalGrid
 const getHospitalLogo = (hospitalName) => {
-  const name = hospitalName.toLowerCase();
+  const name = (hospitalName || '').toLowerCase();
   
   if (name.includes('charité') || name.includes('charite')) {
     return 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Charite_logo.svg/200px-Charite_logo.svg.png';
@@ -47,6 +47,11 @@ const getHospitalLogo = (hospitalName) => {
 };
 
 export default function JobCard({ job, isSelected, onClick }) {
+  // Handle both camelCase and snake_case field names from Supabase
+  const hospitalName = job.hospitalName || job.hospital_name || '';
+  const jobDetailsUrl = job.jobDetailsUrl || job.job_details_url;
+  const sourceUrl = job.sourceUrl || job.source_url;
+  
   return (
     <Card 
       className={`cursor-pointer transition-all duration-200 hover:shadow-lg border-2 ${
@@ -74,16 +79,16 @@ export default function JobCard({ job, isSelected, onClick }) {
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center overflow-hidden">
                 <img
-                  src={job.hospitalLogo || getHospitalLogo(job.hospitalName)}
-                  alt={`${job.hospitalName} logo`}
+                  src={job.hospitalLogo || getHospitalLogo(hospitalName)}
+                  alt={`${hospitalName} logo`}
                   className="w-full h-full object-contain"
                   onError={(e) => {
-                    e.target.src = getHospitalLogo(job.hospitalName);
+                    e.target.src = getHospitalLogo(hospitalName);
                   }}
                 />
               </div>
               <div>
-                <div className="font-medium text-foreground">{job.hospitalName}</div>
+                <div className="font-medium text-foreground">{hospitalName}</div>
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <MapPin className="w-3 h-3" />
                   <span>{job.city}, {GERMAN_STATES[job.state] || job.state}</span>
@@ -91,9 +96,9 @@ export default function JobCard({ job, isSelected, onClick }) {
               </div>
             </div>
           </div>
-          {(job.jobDetailsUrl || job.sourceUrl) && (
+          {(jobDetailsUrl || sourceUrl) && (
             <a
-              href={job.jobDetailsUrl || job.sourceUrl}
+              href={jobDetailsUrl || sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
