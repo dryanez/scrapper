@@ -215,10 +215,12 @@ export default function JobDetails() {
   }, [loadJob]);
 
   useEffect(() => {
-    if (job && !job.hospitalId && job.hospitalName) {
+    const jobHospitalId = job?.hospitalId || job?.hospital_id;
+    const jobHospitalName = job?.hospitalName || job?.hospital_name;
+    if (job && !jobHospitalId && jobHospitalName) {
         const findHospital = async () => {
             const { Hospital } = await import('@/api/entities');
-            const hospitals = await Hospital.filter({ name: job.hospitalName });
+            const hospitals = await Hospital.filter({ name: jobHospitalName });
             if (hospitals.length > 0) {
                 setFoundHospitalId(hospitals[0].id);
             }
@@ -254,7 +256,9 @@ export default function JobDetails() {
     );
   }
 
-  const hospitalId = job.hospitalId || foundHospitalId;
+  const hospitalId = job.hospitalId || job.hospital_id || foundHospitalId;
+  const hospitalName = job.hospitalName || job.hospital_name || '';
+  const jobUrl = job.jobDetailsUrl || job.job_details_url || job.sourceUrl || job.source_url;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
@@ -277,25 +281,25 @@ export default function JobDetails() {
                       <Link to={createPageUrl(`HospitalDetail?id=${hospitalId}`)} className="flex items-center gap-2 group">
                         <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                             <img
-                                src={getHospitalLogo(job.hospitalName)}
-                                alt={`${job.hospitalName} logo`}
+                                src={getHospitalLogo(hospitalName)}
+                                alt={`${hospitalName} logo`}
                                 className="w-full h-full object-contain"
                             />
                         </div>
                         <span className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors">
-                            {job.hospitalName}
+                            {hospitalName}
                         </span>
                       </Link>
                     ) : (
                       <div className="flex items-center gap-2">
                         <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                             <img
-                                src={getHospitalLogo(job.hospitalName)}
-                                alt={`${job.hospitalName} logo`}
+                                src={getHospitalLogo(hospitalName)}
+                                alt={`${hospitalName} logo`}
                                 className="w-full h-full object-contain"
                             />
                         </div>
-                        <span className="font-medium text-slate-900">{job.hospitalName}</span>
+                        <span className="font-medium text-slate-900">{hospitalName}</span>
                       </div>
                     )}
 
@@ -322,14 +326,14 @@ export default function JobDetails() {
                     onClick={() => setIsPreviewOpen(true)}
                     variant="outline"
                     className="inline-flex items-center gap-2"
-                    disabled={!job.jobDetailsUrl}
+                    disabled={!jobUrl}
                   >
                     <Eye className="w-4 h-4" />
                     Preview
                   </Button>
-                  {job.jobDetailsUrl && (
+                  {jobUrl && (
                     <a
-                      href={job.jobDetailsUrl}
+                      href={jobUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -608,7 +612,7 @@ export default function JobDetails() {
                 <div className="space-y-3">
                   <div>
                     <div className="text-sm text-slate-600">Hospital Name</div>
-                    <div className="font-medium">{job.hospitalName}</div>
+                    <div className="font-medium">{hospitalName}</div>
                   </div>
                   
                   <div>
@@ -714,28 +718,28 @@ export default function JobDetails() {
         {/* Hospital Jobs Dialog */}
         {job && (
           <HospitalJobsDialog 
-            hospital={{ name: job.hospitalName, id: hospitalId }}
+            hospital={{ name: hospitalName, id: hospitalId }}
             open={showHospitalJobs}
             onOpenChange={setShowHospitalJobs}
           />
         )}
 
         {/* Job Preview Dialog */}
-        {job?.jobDetailsUrl && (
+        {jobUrl && (
           <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
             <DialogContent className="max-w-7xl w-[95%] h-[90vh] flex flex-col p-4">
               <DialogHeader className="pb-2 border-b">
                 <DialogTitle className="truncate">{job.title}</DialogTitle>
                 <DialogDescription className="text-xs text-slate-500">
                   Some websites may block being previewed. If the page is blank, please use the link to open it in a new tab.
-                  <a href={job.jobDetailsUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 font-medium hover:underline">
+                  <a href={jobUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 font-medium hover:underline">
                     Open in New Tab <ExternalLink className="inline w-3 h-3" />
                   </a>
                 </DialogDescription>
               </DialogHeader>
               <div className="flex-1 overflow-hidden bg-white">
                 <iframe
-                  src={job.jobDetailsUrl}
+                  src={jobUrl}
                   title={`Preview of ${job.title}`}
                   className="w-full h-full border-0"
                 />
