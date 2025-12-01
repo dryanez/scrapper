@@ -20,13 +20,26 @@ const setStorageData = (key, data) => {
 };
 
 // ============================================
+// Column name mapping (app uses _date, Supabase uses _at)
+// ============================================
+const mapColumnName = (column) => {
+  const mapping = {
+    'created_date': 'created_at',
+    'updated_date': 'updated_at',
+    'appliedAt': 'applied_at',
+    'isActive': 'is_active',
+  };
+  return mapping[column] || column;
+};
+
+// ============================================
 // Supabase CRUD operations
 // ============================================
 const createSupabaseEntity = (tableName) => {
   return {
     list: async (orderBy = '-created_at', limit = 1000) => {
       const isDesc = orderBy.startsWith('-');
-      const column = orderBy.replace('-', '');
+      const column = mapColumnName(orderBy.replace('-', ''));
       
       const { data, error } = await supabase
         .from(tableName)
@@ -42,10 +55,11 @@ const createSupabaseEntity = (tableName) => {
       let query = supabase.from(tableName).select('*');
       
       Object.entries(filters).forEach(([key, value]) => {
+        const mappedKey = mapColumnName(key);
         if (Array.isArray(value)) {
-          query = query.in(key, value);
+          query = query.in(mappedKey, value);
         } else {
-          query = query.eq(key, value);
+          query = query.eq(mappedKey, value);
         }
       });
       
