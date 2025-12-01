@@ -175,11 +175,11 @@ export default function HospitalCard({ hospital, jobCount, latestJob, onUpdate, 
         <CardContent className="pt-0 flex-grow flex flex-col">
           <div className="space-y-2 mb-4 text-sm flex-grow">
             {/* Contact Info Section */}
-            {(hospital.contactEmails || hospital.contactInfo || hospital.notes) && (
+            {(hospital.contactEmails || hospital.contact_emails || hospital.contactInfo || hospital.contact_info || hospital.notes) && (
               <div className="space-y-2 p-2 bg-secondary/50 rounded-lg">
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Kontakt</div>
                 {(() => {
-                  const contacts = parseContactInfo(hospital.contactInfo || hospital.notes);
+                  const contacts = parseContactInfo(hospital.contactInfo || hospital.contact_info || hospital.notes);
                   if (contacts.length > 0) {
                     return (
                       <div className="space-y-1.5">
@@ -209,15 +209,16 @@ export default function HospitalCard({ hospital, jobCount, latestJob, onUpdate, 
                         )}
                       </div>
                     );
-                  } else if (hospital.contactEmails) {
+                  } else if (hospital.contactEmails || hospital.contact_emails) {
+                    const email = (hospital.contactEmails || hospital.contact_emails).split(',')[0].trim();
                     return (
                       <a 
-                        href={`mailto:${hospital.contactEmails.split(',')[0].trim()}`}
+                        href={`mailto:${email}`}
                         className="text-xs text-primary hover:underline flex items-center gap-1"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Mail className="w-3 h-3" />
-                        {hospital.contactEmails.split(',')[0].trim()}
+                        {email}
                       </a>
                     );
                   }
