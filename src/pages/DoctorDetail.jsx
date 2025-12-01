@@ -37,38 +37,52 @@ export default function DoctorDetail() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const calculateTopMatches = useCallback((doc, jobs) => {
+    // Normalize doctor fields for matching
+    const docSpecialties = doc.specialties || [];
+    const docCurrentState = doc.currentState || doc.current_state;
+    const docDesiredStates = doc.desiredStates || doc.desired_states || [];
+    const docExperienceYears = doc.experienceYears ?? doc.experience_years;
+    const docWorkPermitStatus = doc.workPermitStatus || doc.work_permit_status;
+    const docWillingToRelocate = doc.willingToRelocate ?? doc.willing_to_relocate;
+
     // --- UPDATED MATCHING ALGORITHM (same as Dashboard) ---
     const potentialMatches = jobs
       .map(job => {
         let score = 0;
         const reasons = {};
 
+        // Normalize job fields
+        const jobSpecialty = job.specialty || '';
+        const jobState = job.state || '';
+        const jobSeniority = job.seniority || '';
+        const jobHospitalName = job.hospitalName || job.hospital_name || '';
+        const jobCity = job.city || '';
+
         // 1. Specialty Match (up to 50 points)
-        if (doc.specialties?.some(spec => 
-          job.specialty?.toLowerCase().includes(spec.toLowerCase()) ||
-          spec.toLowerCase().includes(job.specialty?.toLowerCase())
+        if (docSpecialties?.some(spec => 
+          jobSpecialty?.toLowerCase().includes(spec.toLowerCase()) ||
+          spec.toLowerCase().includes(jobSpecialty?.toLowerCase())
         )) {
           score += 50;
-          reasons.specialty = `Perfect specialty match: ${job.specialty}`;
+          reasons.specialty = `Perfect specialty match: ${jobSpecialty}`;
         }
 
         // 2. Location Match (up to 30 points)
-        const jobState = job.state;
-        if (doc.currentState === jobState) {
+        if (docCurrentState === jobState) {
           score += 30;
           reasons.location = `Currently lives in ${GERMAN_STATES[jobState] || jobState}`;
-        } else if (doc.desiredStates?.includes(jobState)) {
+        } else if (docDesiredStates?.includes(jobState)) {
           score += 25;
           reasons.location = `Wants to work in ${GERMAN_STATES[jobState] || jobState}`;
-        } else if (doc.willingToRelocate) {
+        } else if (docWillingToRelocate) {
           score += 10;
           reasons.location = "Willing to relocate";
         }
 
         // 3. Experience & Seniority Match (up to 15 points)
-        if (doc.experienceYears) {
-          const exp = doc.experienceYears;
-          switch (job.seniority) {
+        if (docExperienceYears != null) {
+          const exp = docExperienceYears;
+          switch (jobSeniority) {
             case "Assistenzarzt":
               if (exp >= 0 && exp <= 5) { score += 15; reasons.experience = "Ideal experience for Assistenzarzt"; }
               else if (exp > 5) { score += 5; reasons.experience = "Overqualified, but could be a fit"; }
@@ -89,15 +103,21 @@ export default function DoctorDetail() {
         }
 
         // 4. Work Permit Status (up to 5 points)
-        if (doc.workPermitStatus === "EU_CITIZEN") {
+        if (docWorkPermitStatus === "EU_CITIZEN") {
           score += 5;
           reasons.permits = "EU citizen";
-        } else if (doc.workPermitStatus === "WORK_PERMIT") {
+        } else if (docWorkPermitStatus === "WORK_PERMIT") {
           score += 3;
           reasons.permits = "Has valid work permit";
         }
 
-        return { ...job, matchScore: Math.min(score, 100), matchReasons: reasons };
+        return { 
+          ...job, 
+          hospitalName: jobHospitalName, 
+          city: jobCity,
+          matchScore: Math.min(score, 100), 
+          matchReasons: reasons 
+        };
       })
       .filter(job => job.matchScore >= 40) // Only include jobs with a minimum match score
       .sort((a, b) => b.matchScore - a.matchScore); // Sort all matches by score descending
@@ -190,6 +210,21 @@ export default function DoctorDetail() {
     );
   }
 
+  // Handle both camelCase and snake_case field names from Supabase
+  const firstName = doctor.firstName || doctor.first_name || '';
+  const lastName = doctor.lastName || doctor.last_name || '';
+  const email = doctor.email || '';
+  const phone = doctor.phone || '';
+  const photoUrl = doctor.photoUrl || doctor.photo_url;
+  const cvFileUrl = doctor.cvFileUrl || doctor.cv_file_url;
+  const specialties = doctor.specialties || [];
+  const experienceYears = doctor.experienceYears ?? doctor.experience_years ?? 0;
+  const currentState = doctor.currentState || doctor.current_state;
+  const desiredStates = doctor.desiredStates || doctor.desired_states || [];
+  const languages = doctor.languages || [];
+  const workPermitStatus = doctor.workPermitStatus || doctor.work_permit_status;
+  const willingToRelocate = doctor.willingToRelocate ?? doctor.willing_to_relocate;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
       <div className="max-w-6xl mx-auto">
@@ -207,15 +242,15 @@ export default function DoctorDetail() {
               <CardHeader className="text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-white shadow-lg">
                   <AvatarImage 
-                    src={doctor.photoUrl || getAnimalAvatar(doctor.id, `${doctor.firstName} ${doctor.lastName}`)} 
-                    alt={`${doctor.firstName} ${doctor.lastName}`} 
+                    src={photoUrl || getAnimalAvatar(doctor.id, `${firstName} ${lastName}`)} 
+                    alt={`${firstName} ${lastName}`} 
                   />
                   <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold text-3xl">
-                    {getInitials(doctor.firstName, doctor.lastName)}
+                    {getInitials(firstName, lastName)}
                   </AvatarFallback>
                 </Avatar>
-                <CardTitle className="text-2xl">{doctor.firstName} {doctor.lastName}</CardTitle>
-                <p className="text-slate-500">{doctor.specialties?.[0]}</p>
+                <CardTitle className="text-2xl">{firstName} {lastName}</CardTitle>
+                <p className="text-slate-500">{specialties?.[0]}</p>
                 
                 {/* Add Edit Button */}
                 <div className="mt-4">
@@ -231,26 +266,34 @@ export default function DoctorDetail() {
               </CardHeader>
               <CardContent>
                 <div className="flex justify-center gap-2 mb-4">
-                  <a href={`mailto:${doctor.email}`}>
-                    <Button variant="outline" size="icon"><Mail className="w-4 h-4" /></Button>
-                  </a>
-                  {doctor.phone && <a href={`tel:${doctor.phone}`}>
-                    <Button variant="outline" size="icon"><Phone className="w-4 h-4" /></Button>
-                  </a>}
-                  {doctor.cvFileUrl && <a href={doctor.cvFileUrl} target="_blank" rel="noreferrer">
-                    <Button variant="outline" size="icon"><FileText className="w-4 h-4" /></Button>
-                  </a>}
+                  {email && (
+                    <a href={`mailto:${email}`}>
+                      <Button variant="outline" size="icon"><Mail className="w-4 h-4" /></Button>
+                    </a>
+                  )}
+                  {phone && (
+                    <a href={`tel:${phone}`}>
+                      <Button variant="outline" size="icon"><Phone className="w-4 h-4" /></Button>
+                    </a>
+                  )}
+                  {cvFileUrl && (
+                    <a href={cvFileUrl} target="_blank" rel="noreferrer">
+                      <Button variant="outline" size="icon"><FileText className="w-4 h-4" /></Button>
+                    </a>
+                  )}
                 </div>
                 <div className="space-y-3 text-sm">
                   <div className="font-semibold text-slate-800">Key Information</div>
-                  <div className="flex items-start gap-3"><Briefcase className="w-4 h-4 mt-0.5 text-slate-400" /><div><span className="font-medium">Experience:</span> {doctor.experienceYears} years</div></div>
-                  <div className="flex items-start gap-3"><MapPin className="w-4 h-4 mt-0.5 text-slate-400" /><div><span className="font-medium">Current State:</span> {GERMAN_STATES[doctor.currentState] || 'N/A'}</div></div>
-                  <div className="flex items-start gap-3"><MapPin className="w-4 h-4 mt-0.5 text-slate-400" /><div><span className="font-medium">Desired States:</span> {doctor.desiredStates?.map(stateCode => GERMAN_STATES[stateCode] || stateCode).join(', ') || 'N/A'}</div></div>
-                  <div className="flex items-start gap-3"><Globe className="w-4 h-4 mt-0.5 text-slate-400" /><div><span className="font-medium">Languages:</span> {doctor.languages?.join(', ') || 'N/A'}</div></div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-4 h-4 text-slate-400" />
-                    <Badge className={workPermitStyles[doctor.workPermitStatus]}>{doctor.workPermitStatus?.replace('_', ' ')}</Badge>
-                  </div>
+                  <div className="flex items-start gap-3"><Briefcase className="w-4 h-4 mt-0.5 text-slate-400" /><div><span className="font-medium">Experience:</span> {experienceYears} years</div></div>
+                  <div className="flex items-start gap-3"><MapPin className="w-4 h-4 mt-0.5 text-slate-400" /><div><span className="font-medium">Current State:</span> {GERMAN_STATES[currentState] || currentState || 'N/A'}</div></div>
+                  <div className="flex items-start gap-3"><MapPin className="w-4 h-4 mt-0.5 text-slate-400" /><div><span className="font-medium">Desired States:</span> {desiredStates?.length > 0 ? desiredStates.map(stateCode => GERMAN_STATES[stateCode] || stateCode).join(', ') : 'N/A'}</div></div>
+                  <div className="flex items-start gap-3"><Globe className="w-4 h-4 mt-0.5 text-slate-400" /><div><span className="font-medium">Languages:</span> {languages?.length > 0 ? languages.join(', ') : 'N/A'}</div></div>
+                  {workPermitStatus && (
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-4 h-4 text-slate-400" />
+                      <Badge className={workPermitStyles[workPermitStatus]}>{workPermitStatus?.replace('_', ' ')}</Badge>
+                    </div>
+                  )}
                 </div >
               </CardContent>
             </Card>
@@ -266,20 +309,24 @@ export default function DoctorDetail() {
                 {topMatches.length > 0 ? (
                   <>
                     <div className="space-y-3">
-                      {topMatches.slice(0, 5).map(job => (
-                        <div key={job.id} className="p-3 border rounded-lg flex justify-between items-center">
-                          <div>
-                            <Link to={createPageUrl(`JobDetails?id=${job.id}`)} className="font-semibold text-blue-700 hover:underline">{job.title}</Link>
-                            <p className="text-sm text-slate-600">{job.hospitalName} - {job.city}</p>
+                      {topMatches.slice(0, 5).map(job => {
+                        const jobHospitalName = job.hospitalName || job.hospital_name || '';
+                        const jobCity = job.city || '';
+                        return (
+                          <div key={job.id} className="p-3 border rounded-lg flex justify-between items-center">
+                            <div>
+                              <Link to={createPageUrl(`JobDetails?id=${job.id}`)} className="font-semibold text-blue-700 hover:underline">{job.title}</Link>
+                              <p className="text-sm text-slate-600">{jobHospitalName}{jobCity ? ` - ${jobCity}` : ''}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-yellow-100 text-yellow-800">{job.matchScore}%</Badge>
+                              <Link to={createPageUrl(`EmailComposer?doctorId=${doctor.id}&jobId=${job.id}`)}>
+                                <Button size="sm">Apply</Button>
+                              </Link>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-yellow-100 text-yellow-800">{job.matchScore}%</Badge>
-                            <Link to={createPageUrl(`EmailComposer?doctorId=${doctor.id}&jobId=${job.id}`)}>
-                              <Button size="sm">Apply</Button>
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     {topMatches.length > 5 && (
                       <div className="mt-4 text-center">
@@ -304,22 +351,33 @@ export default function DoctorDetail() {
               <CardContent>
                 {applications.length > 0 ? (
                   <div className="space-y-3">
-                    {applications.map(app => (
-                      <div key={app.id} className="p-3 border rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <Link to={createPageUrl(`JobDetails?id=${app.jobId}`)} className="font-semibold text-blue-700 hover:underline">
-                              {app.jobTitle || 'Job Application'}
-                            </Link>
-                            <p className="text-sm text-slate-600 flex items-center gap-1"><Building2 className="w-3 h-3"/>{app.hospitalName}</p>
+                    {applications.map(app => {
+                      const appJobId = app.jobId || app.job_id;
+                      const appJobTitle = app.jobTitle || app.job_title || 'Job Application';
+                      const appHospitalName = app.hospitalName || app.hospital_name || '';
+                      const appAppliedAt = app.appliedAt || app.applied_at || app.created_at;
+                      const appliedDate = appAppliedAt ? new Date(appAppliedAt) : null;
+                      const isValidDate = appliedDate && !isNaN(appliedDate.getTime());
+                      
+                      return (
+                        <div key={app.id} className="p-3 border rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <Link to={createPageUrl(`JobDetails?id=${appJobId}`)} className="font-semibold text-blue-700 hover:underline">
+                                {appJobTitle}
+                              </Link>
+                              <p className="text-sm text-slate-600 flex items-center gap-1"><Building2 className="w-3 h-3"/>{appHospitalName}</p>
+                            </div>
+                            <Badge variant={app.status === 'HIRED' ? 'default' : 'secondary'}>{app.status}</Badge>
                           </div>
-                          <Badge variant={app.status === 'HIRED' ? 'default' : 'secondary'}>{app.status}</Badge>
+                          {isValidDate && (
+                            <p className="text-xs text-slate-500 mt-2 flex items-center gap-1" title={appliedDate.toLocaleString()}>
+                              <Clock className="w-3 h-3" />Applied {formatDistanceToNow(appliedDate, { addSuffix: true })}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-xs text-slate-500 mt-2 flex items-center gap-1" title={new Date(app.appliedAt).toLocaleString()}>
-                          <Clock className="w-3 h-3" />Applied {formatDistanceToNow(new Date(app.appliedAt), { addSuffix: true })}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : <p className="text-slate-500">No applications recorded for this doctor yet.</p>}
               </CardContent>
