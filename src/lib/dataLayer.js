@@ -22,14 +22,25 @@ const setStorageData = (key, data) => {
 // ============================================
 // Column name mapping (app uses camelCase, Supabase uses snake_case)
 // ============================================
+const fieldMapping = {
+  // Date fields - app uses _date, Supabase uses _at
+  'created_date': 'created_at',
+  'updated_date': 'updated_at',
+  'createdDate': 'created_at',
+  'updatedDate': 'updated_at',
+  // Other field mappings
+  'appliedAt': 'applied_at',
+  'isActive': 'is_active',
+  // Fields that don't exist in jobs table - remove them
+  'hospitalLogo': null,  // Will be removed
+  'status': null,        // Will be removed  
+  'portalType': 'portal_type',
+  'jobHash': 'job_hash',
+  'descriptionHtml': 'description_html',
+};
+
 const mapColumnName = (column) => {
-  const mapping = {
-    'created_date': 'created_at',
-    'updated_date': 'updated_at',
-    'appliedAt': 'applied_at',
-    'isActive': 'is_active',
-  };
-  return mapping[column] || column;
+  return fieldMapping[column] || column;
 };
 
 // Convert camelCase to snake_case
@@ -48,7 +59,16 @@ const mapKeysToSnakeCase = (obj) => {
   
   const mapped = {};
   for (const [key, value] of Object.entries(obj)) {
-    // Skip if already snake_case or special keys
+    // First check if there's an explicit mapping
+    if (key in fieldMapping) {
+      const mappedKey = fieldMapping[key];
+      // If mapped to null, skip this field (it doesn't exist in DB)
+      if (mappedKey !== null) {
+        mapped[mappedKey] = value;
+      }
+      continue;
+    }
+    // Convert camelCase to snake_case
     const snakeKey = key.includes('_') ? key : toSnakeCase(key);
     mapped[snakeKey] = value;
   }
