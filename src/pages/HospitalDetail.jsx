@@ -448,15 +448,15 @@ Your entire response must be a single JSON object. Do not include any text, expl
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col gap-3">
-                  {hospital.websiteUrl && (
-                    <a href={hospital.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
+                  {(hospital.websiteUrl || hospital.website_url) && (
+                    <a href={hospital.websiteUrl || hospital.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-600 hover:text-blue-800">
                       <Globe className="w-4 h-4" />
                       Visit Website
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
-                  {careerUrl && (
-                    <a href={careerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-600 hover:text-green-800 font-medium">
+                  {(careerUrl || hospital.careerPageUrl || hospital.career_page_url) && (
+                    <a href={careerUrl || hospital.careerPageUrl || hospital.career_page_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-600 hover:text-green-800 font-medium">
                       <Briefcase className="w-4 h-4" />
                       View Career Page
                       <ExternalLink className="w-3 h-3" />
@@ -515,7 +515,7 @@ Your entire response must be a single JSON object. Do not include any text, expl
               </CardContent>
             </Card>
 
-            {(hospital.notes || hospital.contactInfo || hospital.contactEmails) && (
+            {(hospital.notes || hospital.contactInfo || hospital.contact_info || hospital.contactEmails || hospital.contact_emails) && (
               <Card className="bg-white/90 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -525,7 +525,7 @@ Your entire response must be a single JSON object. Do not include any text, expl
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {(() => {
-                    const contacts = parseContactInfo(hospital.contactInfo || hospital.notes);
+                    const contacts = parseContactInfo(hospital.contactInfo || hospital.contact_info || hospital.notes);
                     if (contacts.length > 0) {
                       return (
                         <div className="space-y-3">
@@ -549,12 +549,13 @@ Your entire response must be a single JSON object. Do not include any text, expl
                           ))}
                         </div>
                       );
-                    } else if (hospital.contactEmails) {
+                    } else if (hospital.contactEmails || hospital.contact_emails) {
+                      const emails = (hospital.contactEmails || hospital.contact_emails);
                       return (
                         <div className="space-y-2">
                           <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Email</div>
                           <div className="flex flex-wrap gap-2">
-                            {hospital.contactEmails.split(',').map((email, idx) => (
+                            {emails.split(',').map((email, idx) => (
                               <a
                                 key={idx}
                                 href={`mailto:${email.trim()}`}
