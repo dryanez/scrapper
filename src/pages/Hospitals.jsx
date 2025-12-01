@@ -328,7 +328,8 @@ If no jobs are found, return an empty array: { "jobs_found": [] }`;
   const handleScanHospital = async (hospital) => {
     // The previous implementation was a two-step LLM process, now simplified
     // to use the new batch scan function with a single hospital for consistency.
-    if (!hospital.careerPageUrl) {
+    const careerUrl = hospital.careerPageUrl || hospital.career_page_url;
+    if (!careerUrl) {
       setAlert({ type: "error", message: "This hospital has no career page URL to scan for jobs." });
       return;
     }
@@ -336,12 +337,12 @@ If no jobs are found, return an empty array: { "jobs_found": [] }`;
   };
   
   const handleScanAllHospitals = () => {
-    const hospitalsToScan = hospitals.filter(h => h.careerPageUrl);
+    const hospitalsToScan = hospitals.filter(h => h.careerPageUrl || h.career_page_url);
     runBatchScan(hospitalsToScan);
   };
   
   const handleScanStateHospitals = (stateCode) => {
-    const hospitalsToScan = hospitals.filter(h => h.state === stateCode && h.careerPageUrl);
+    const hospitalsToScan = hospitals.filter(h => h.state === stateCode && (h.careerPageUrl || h.career_page_url));
     runBatchScan(hospitalsToScan);
   };
 
