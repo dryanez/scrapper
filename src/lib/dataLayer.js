@@ -37,6 +37,7 @@ const fieldMapping = {
   'portalType': 'portal_type',
   'jobHash': 'job_hash',
   'descriptionHtml': 'description_html',
+  'description': 'description_html',  // description -> description_html
 };
 
 const mapColumnName = (column) => {
