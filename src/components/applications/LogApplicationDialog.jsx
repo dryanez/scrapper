@@ -49,12 +49,13 @@ export default function LogApplicationDialog({ job, open, onOpenChange, onSucces
     
     setIsSaving(true);
     try {
-      const hospitalName = job.hospitalName || job.hospital_name || '';
+      // Only send columns that exist in the applications table:
+      // doctor_id, job_id, hospital_id, status, applied_at, notes
+      const hospitalId = job.hospitalId || job.hospital_id || null;
       await Application.create({
-        jobId: job.id,
         doctorId: selectedDoctor.id,
-        jobTitle: job.title,
-        hospitalName: hospitalName,
+        jobId: job.id,
+        hospitalId: hospitalId,
         appliedAt: new Date().toISOString(),
         status: "APPLIED",
         notes: notes,

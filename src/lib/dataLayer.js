@@ -31,15 +31,23 @@ const fieldMapping = {
   // Other field mappings
   'appliedAt': 'applied_at',
   'isActive': 'is_active',
+  'doctorId': 'doctor_id',
+  'jobId': 'job_id',
+  'hospitalId': 'hospital_id',
   // Fields that don't exist in jobs table - remove them
   'hospitalLogo': null,  // Will be removed
-  'status': null,        // Will be removed  
   'portalType': null,    // Will be removed - doesn't exist in jobs table
   'jobHash': null,       // Will be removed - doesn't exist in jobs table
   'portal_type': null,   // Will be removed - doesn't exist in jobs table
   'job_hash': null,      // Will be removed - doesn't exist in jobs table
   'descriptionHtml': 'description_html',
   'description': 'description_html',  // description -> description_html
+};
+
+// Fields that don't exist in specific tables
+const tableExcludedFields = {
+  'applications': ['jobTitle', 'job_title', 'hospitalName', 'hospital_name', 'status'],
+  'jobs': ['status', 'hospitalLogo'],
 };
 
 const mapColumnName = (column) => {
@@ -57,11 +65,19 @@ const toCamelCase = (str) => {
 };
 
 // Convert object keys from camelCase to snake_case for Supabase
-const mapKeysToSnakeCase = (obj) => {
+const mapKeysToSnakeCase = (obj, tableName = null) => {
   if (!obj || typeof obj !== 'object') return obj;
+  
+  // Get excluded fields for this table
+  const excludedFields = tableName ? (tableExcludedFields[tableName] || []) : [];
   
   const mapped = {};
   for (const [key, value] of Object.entries(obj)) {
+    // Skip fields that are excluded for this table
+    if (excludedFields.includes(key)) {
+      continue;
+    }
+    
     // First check if there's an explicit mapping
     if (key in fieldMapping) {
       const mappedKey = fieldMapping[key];
@@ -156,8 +172,8 @@ const createSupabaseEntity = (tableName) => {
     },
 
     create: async (entityData) => {
-      // Convert camelCase keys to snake_case for Supabase
-      const mappedData = mapKeysToSnakeCase(entityData);
+      // Convert camelCase keys to snake_case for Supabase, with table-specific exclusions
+      const mappedData = mapKeysToSnakeCase(entityData, tableName);
       
       const { data, error } = await supabase
         .from(tableName)
@@ -174,8 +190,8 @@ const createSupabaseEntity = (tableName) => {
     },
 
     update: async (id, updates) => {
-      // Convert camelCase keys to snake_case for Supabase
-      const mappedUpdates = mapKeysToSnakeCase(updates);
+      // Convert camelCase keys to snake_case for Supabase, with table-specific exclusions
+      const mappedUpdates = mapKeysToSnakeCase(updates, tableName);
       
       const { data, error } = await supabase
         .from(tableName)
