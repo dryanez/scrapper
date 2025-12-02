@@ -12,15 +12,9 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import { getAnimalAvatar } from "../components/utils/AvatarGenerator";
+import { findMatchingJobs, GERMAN_STATES } from "@/utils/matchingAlgorithm";
 
 import DoctorEditDialog from "../components/doctors/DoctorEditDialog";
-
-const GERMAN_STATES = {
-  "BW": "Baden-Württemberg", "BY": "Bayern", "Berlin": "Berlin", "BB": "Brandenburg", "HB": "Bremen",
-  "HH": "Hamburg", "HE": "Hessen", "MV": "Mecklenburg-Vorpommern", "NI": "Niedersachsen",
-  "NW": "Nordrhein-Westfalen", "RP": "Rheinland-Pfalz", "SL": "Saarland", "SN": "Sachsen",
-  "ST": "Sachsen-Anhalt", "SH": "Schleswig-Holstein", "TH": "Thüringen"
-};
 
 const workPermitStyles = {
   EU_CITIZEN: "bg-green-100 text-green-800 border-green-200",
@@ -37,92 +31,9 @@ export default function DoctorDetail() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const calculateTopMatches = useCallback((doc, jobs) => {
-    // Normalize doctor fields for matching
-    const docSpecialties = doc.specialties || [];
-    const docCurrentState = doc.currentState || doc.current_state;
-    const docDesiredStates = doc.desiredStates || doc.desired_states || [];
-    const docExperienceYears = doc.experienceYears ?? doc.experience_years;
-    const docWorkPermitStatus = doc.workPermitStatus || doc.work_permit_status;
-    const docWillingToRelocate = doc.willingToRelocate ?? doc.willing_to_relocate;
-
-    // --- UPDATED MATCHING ALGORITHM (same as Dashboard) ---
-    const potentialMatches = jobs
-      .map(job => {
-        let score = 0;
-        const reasons = {};
-
-        // Normalize job fields
-        const jobSpecialty = job.specialty || '';
-        const jobState = job.state || '';
-        const jobSeniority = job.seniority || '';
-        const jobHospitalName = job.hospitalName || job.hospital_name || '';
-        const jobCity = job.city || '';
-
-        // 1. Specialty Match (up to 50 points)
-        if (docSpecialties?.some(spec => 
-          jobSpecialty?.toLowerCase().includes(spec.toLowerCase()) ||
-          spec.toLowerCase().includes(jobSpecialty?.toLowerCase())
-        )) {
-          score += 50;
-          reasons.specialty = `Perfect specialty match: ${jobSpecialty}`;
-        }
-
-        // 2. Location Match (up to 30 points)
-        if (docCurrentState === jobState) {
-          score += 30;
-          reasons.location = `Currently lives in ${GERMAN_STATES[jobState] || jobState}`;
-        } else if (docDesiredStates?.includes(jobState)) {
-          score += 25;
-          reasons.location = `Wants to work in ${GERMAN_STATES[jobState] || jobState}`;
-        } else if (docWillingToRelocate) {
-          score += 10;
-          reasons.location = "Willing to relocate";
-        }
-
-        // 3. Experience & Seniority Match (up to 15 points)
-        if (docExperienceYears != null) {
-          const exp = docExperienceYears;
-          switch (jobSeniority) {
-            case "Assistenzarzt":
-              if (exp >= 0 && exp <= 5) { score += 15; reasons.experience = "Ideal experience for Assistenzarzt"; }
-              else if (exp > 5) { score += 5; reasons.experience = "Overqualified, but could be a fit"; }
-              break;
-            case "Facharzt":
-              if (exp >= 3 && exp <= 10) { score += 15; reasons.experience = "Ideal experience for Facharzt"; }
-              else if (exp > 10) { score += 10; reasons.experience = "Very experienced Facharzt"; }
-              else if (exp >= 1) { score += 5; reasons.experience = "Approaching Facharzt level"; }
-              break;
-            case "Oberarzt":
-               if (exp >= 7) { score += 15; reasons.experience = "Sufficient experience for Oberarzt"; }
-               else if (exp >= 5) { score += 10; reasons.experience = "Nearing Oberarzt level"; }
-               break;
-            default:
-              score += 5;
-              break;
-          }
-        }
-
-        // 4. Work Permit Status (up to 5 points)
-        if (docWorkPermitStatus === "EU_CITIZEN") {
-          score += 5;
-          reasons.permits = "EU citizen";
-        } else if (docWorkPermitStatus === "WORK_PERMIT") {
-          score += 3;
-          reasons.permits = "Has valid work permit";
-        }
-
-        return { 
-          ...job, 
-          hospitalName: jobHospitalName, 
-          city: jobCity,
-          matchScore: Math.min(score, 100), 
-          matchReasons: reasons 
-        };
-      })
-      .filter(job => job.matchScore >= 40) // Only include jobs with a minimum match score
-      .sort((a, b) => b.matchScore - a.matchScore); // Sort all matches by score descending
-      
-    setTopMatches(potentialMatches); // Set all potential matches, not just the top 5
+    // Use centralized matching algorithm
+    const matches = findMatchingJobs(doc, jobs, 35);
+    setTopMatches(matches);
   }, []);
 
   const loadData = useCallback(async (doctorId) => {

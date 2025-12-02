@@ -23,13 +23,7 @@ import HospitalJobsDialog from "../components/hospitals/HospitalJobsDialog";
 import LogApplicationDialog from "../components/applications/LogApplicationDialog";
 import JobCard from "../components/dashboard/JobCard";
 import { Application } from "@/api/entities";
-
-const GERMAN_STATES = {
-  "BW": "Baden-Württemberg", "BY": "Bayern", "BE": "Berlin", "BB": "Brandenburg", "HB": "Bremen",
-  "HH": "Hamburg", "HE": "Hessen", "MV": "Mecklenburg-Vorpommern", "NI": "Niedersachsen",
-  "NW": "Nordrhein-Westfalen", "RP": "Rheinland-Pfalz", "SL": "Saarland", "SN": "Sachsen",
-  "ST": "Sachsen-Anhalt", "SH": "Schleswig-Holstein", "TH": "Thüringen"
-};
+import { findMatchingDoctors, GERMAN_STATES } from "@/utils/matchingAlgorithm";
 
 const getHospitalLogo = (hospitalName) => {
   if (!hospitalName) return 'https://placehold.co/120x60/6366F1/FFFFFF?text=H';
@@ -81,77 +75,8 @@ export default function JobDetails() {
       return;
     }
 
-    // Otherwise, calculate matches on the fly
-    // --- NEW MATCHING ALGORITHM ---
-    const potentialMatches = doctorsData
-      .map(doctor => {
-        let score = 0;
-        const reasons = {};
-
-        // 1. Specialty Match (up to 50 points)
-        if (doctor.specialties?.some(spec => 
-          currentJob.specialty?.toLowerCase().includes(spec.toLowerCase()) ||
-          spec.toLowerCase().includes(currentJob.specialty?.toLowerCase())
-        )) {
-          score += 50;
-          reasons.specialty = `Perfect specialty match: ${currentJob.specialty}`;
-        }
-
-        // 2. Location Match (up to 30 points)
-        const jobState = currentJob.state;
-        if (doctor.currentState === jobState) {
-          score += 30;
-          reasons.location = `Currently lives in ${GERMAN_STATES[jobState] || jobState}`;
-        } else if (doctor.desiredStates?.includes(jobState)) {
-          score += 25;
-          reasons.location = `Wants to work in ${GERMAN_STATES[jobState] || jobState}`;
-        } else if (doctor.willingToRelocate) {
-          score += 10;
-          reasons.location = "Willing to relocate";
-        }
-
-        // 3. Experience & Seniority Match (up to 15 points)
-        if (doctor.experienceYears) {
-          const exp = doctor.experienceYears;
-          switch (currentJob.seniority) {
-            case "Assistenzarzt":
-              if (exp >= 0 && exp <= 5) { score += 15; reasons.experience = "Ideal experience for Assistenzarzt"; }
-              else if (exp > 5) { score += 5; reasons.experience = "Overqualified, but could be a fit"; }
-              break;
-            case "Facharzt":
-              if (exp >= 3 && exp <= 10) { score += 15; reasons.experience = "Ideal experience for Facharzt"; }
-              else if (exp > 10) { score += 10; reasons.experience = "Very experienced Facharzt"; }
-              else if (exp >= 1) { score += 5; reasons.experience = "Approaching Facharzt level"; }
-              break;
-            case "Oberarzt":
-               if (exp >= 7) { score += 15; reasons.experience = "Sufficient experience for Oberarzt"; }
-               else if (exp >= 5) { score += 10; reasons.experience = "Nearing Oberarzt level"; }
-               break;
-            default:
-              score += 5; // Generic bonus for having experience data
-              break;
-          }
-        }
-
-        // 4. Work Permit Status (up to 5 points)
-        if (doctor.workPermitStatus === "EU_CITIZEN") {
-          score += 5;
-          reasons.permits = "EU citizen";
-        } else if (doctor.workPermitStatus === "WORK_PERMIT") {
-          score += 3;
-          reasons.permits = "Has valid work permit";
-        }
-
-        return {
-          ...doctor,
-          matchScore: Math.min(score, 100),
-          matchReasons: reasons
-        };
-      })
-      .filter(doctor => doctor.matchScore >= 40)
-      .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, 10); // Show top 10 matches
-
+    // Otherwise, use the centralized matching algorithm
+    const potentialMatches = findMatchingDoctors(currentJob, doctorsData, 35).slice(0, 10);
     setMatchedDoctors(potentialMatches);
   }, []);
 

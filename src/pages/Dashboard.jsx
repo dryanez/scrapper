@@ -13,25 +13,7 @@ import { MapPin, Search, Filter, Users, Briefcase, Star, Mail, Phone } from "luc
 
 import JobCard from "../components/dashboard/JobCard";
 import DoctorMatch from "../components/dashboard/DoctorMatch";
-
-const GERMAN_STATES = {
-  "BW": "Baden-Württemberg",
-  "BY": "Bayern",
-  "BE": "Berlin",
-  "BB": "Brandenburg",
-  "HB": "Bremen",
-  "HH": "Hamburg",
-  "HE": "Hessen",
-  "MV": "Mecklenburg-Vorpommern",
-  "NI": "Niedersachsen",
-  "NW": "Nordrhein-Westfalen",
-  "RP": "Rheinland-Pfalz",
-  "SL": "Saarland",
-  "SN": "Sachsen",
-  "ST": "Sachsen-Anhalt",
-  "SH": "Schleswig-Holstein",
-  "TH": "Thüringen"
-};
+import { findMatchingDoctors, GERMAN_STATES } from "@/utils/matchingAlgorithm";
 
 export default function Dashboard() {
   const [jobs, setJobs] = useState([]);
@@ -192,76 +174,8 @@ export default function Dashboard() {
       return existingMatches.sort((a, b) => b.matchScore - a.matchScore);
     }
 
-    // Otherwise, calculate matches on the fly based on job requirements
-    const potentialMatches = doctors
-      .map(doctor => {
-        let score = 0;
-        const reasons = {};
-
-        // 1. Specialty Match (up to 50 points)
-        if (doctor.specialties?.some(spec => 
-          selectedJob.specialty?.toLowerCase().includes(spec.toLowerCase()) ||
-          spec.toLowerCase().includes(selectedJob.specialty?.toLowerCase())
-        )) {
-          score += 50;
-          reasons.specialty = `Perfect specialty match: ${selectedJob.specialty}`;
-        }
-
-        // 2. Location Match (up to 30 points)
-        const jobState = selectedJob.state;
-        if (doctor.currentState === jobState) {
-          score += 30;
-          reasons.location = `Currently lives in ${GERMAN_STATES[jobState]}`;
-        } else if (doctor.desiredStates?.includes(jobState)) {
-          score += 25;
-          reasons.location = `Wants to work in ${GERMAN_STATES[jobState]}`;
-        } else if (doctor.willingToRelocate) {
-          score += 10;
-          reasons.location = "Willing to relocate";
-        }
-
-        // 3. Experience & Seniority Match (up to 15 points)
-        if (doctor.experienceYears) {
-          const exp = doctor.experienceYears;
-          switch (selectedJob.seniority) {
-            case "Assistenzarzt":
-              if (exp >= 0 && exp <= 5) { score += 15; reasons.experience = "Ideal experience for Assistenzarzt"; }
-              else if (exp > 5) { score += 5; reasons.experience = "Overqualified, but could be a fit"; }
-              break;
-            case "Facharzt":
-              if (exp >= 3 && exp <= 10) { score += 15; reasons.experience = "Ideal experience for Facharzt"; }
-              else if (exp > 10) { score += 10; reasons.experience = "Very experienced Facharzt"; }
-              else if (exp >= 1) { score += 5; reasons.experience = "Approaching Facharzt level"; }
-              break;
-            case "Oberarzt":
-               if (exp >= 7) { score += 15; reasons.experience = "Sufficient experience for Oberarzt"; }
-               else if (exp >= 5) { score += 10; reasons.experience = "Nearing Oberarzt level"; }
-               break;
-            default:
-              score += 5; // Generic bonus for having experience data
-              break;
-          }
-        }
-
-        // 4. Work Permit Status (up to 5 points)
-        if (doctor.workPermitStatus === "EU_CITIZEN") {
-          score += 5;
-          reasons.permits = "EU citizen";
-        } else if (doctor.workPermitStatus === "WORK_PERMIT") {
-          score += 3;
-          reasons.permits = "Has valid work permit";
-        }
-
-        return {
-          ...doctor,
-          matchScore: Math.min(score, 100), // Cap at 100
-          matchReasons: reasons
-        };
-      })
-      .filter(doctor => doctor.matchScore >= 40) // Only show doctors with a reasonable match score
-      .sort((a, b) => b.matchScore - a.matchScore);
-
-    return potentialMatches;
+    // Otherwise, use the centralized matching algorithm
+    return findMatchingDoctors(selectedJob, doctors, 35);
   };
 
   // Pagination logic

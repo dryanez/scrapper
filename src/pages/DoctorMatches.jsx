@@ -12,13 +12,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { getAnimalAvatar } from "../components/utils/AvatarGenerator";
-
-const GERMAN_STATES = {
-  "BW": "Baden-Württemberg", "BY": "Bayern", "BE": "Berlin", "BB": "Brandenburg", "HB": "Bremen",
-  "HH": "Hamburg", "HE": "Hessen", "MV": "Mecklenburg-Vorpommern", "NI": "Niedersachsen",
-  "NW": "Nordrhein-Westfalen", "RP": "Rheinland-Pfalz", "SL": "Saarland", "SN": "Sachsen",
-  "ST": "Sachsen-Anhalt", "SH": "Schleswig-Holstein", "TH": "Thüringen"
-};
+import { findMatchingJobs, GERMAN_STATES } from "@/utils/matchingAlgorithm";
 
 export default function DoctorMatches() {
   const [doctor, setDoctor] = useState(null);
@@ -30,71 +24,9 @@ export default function DoctorMatches() {
   const [isLoading, setIsLoading] = useState(true);
 
   const calculateMatches = useCallback((doc, jobs) => {
-    const potentialMatches = jobs
-      .map(job => {
-        let score = 0;
-        const reasons = {};
-
-        // 1. Specialty Match (up to 50 points)
-        if (doc.specialties?.some(spec => 
-          job.specialty?.toLowerCase().includes(spec.toLowerCase()) ||
-          spec.toLowerCase().includes(job.specialty?.toLowerCase())
-        )) {
-          score += 50;
-          reasons.specialty = `Perfect specialty match: ${job.specialty}`;
-        }
-
-        // 2. Location Match (up to 30 points)
-        const jobState = job.state;
-        if (doc.currentState === jobState) {
-          score += 30;
-          reasons.location = `Currently lives in ${GERMAN_STATES[jobState] || jobState}`;
-        } else if (doc.desiredStates?.includes(jobState)) {
-          score += 25;
-          reasons.location = `Wants to work in ${GERMAN_STATES[jobState] || jobState}`;
-        } else if (doc.willingToRelocate) {
-          score += 10;
-          reasons.location = "Willing to relocate";
-        }
-
-        // 3. Experience & Seniority Match (up to 15 points)
-        if (doc.experienceYears) {
-          const exp = doc.experienceYears;
-          switch (job.seniority) {
-            case "Assistenzarzt":
-              if (exp >= 0 && exp <= 5) { score += 15; reasons.experience = "Ideal experience for Assistenzarzt"; }
-              else if (exp > 5) { score += 5; reasons.experience = "Overqualified, but could be a fit"; }
-              break;
-            case "Facharzt":
-              if (exp >= 3 && exp <= 10) { score += 15; reasons.experience = "Ideal experience for Facharzt"; }
-              else if (exp > 10) { score += 10; reasons.experience = "Very experienced Facharzt"; }
-              else if (exp >= 1) { score += 5; reasons.experience = "Approaching Facharzt level"; }
-              break;
-            case "Oberarzt":
-               if (exp >= 7) { score += 15; reasons.experience = "Sufficient experience for Oberarzt"; }
-               else if (exp >= 5) { score += 10; reasons.experience = "Nearing Oberarzt level"; }
-               break;
-            default:
-              score += 5;
-              break;
-          }
-        }
-
-        // 4. Work Permit Status (up to 5 points)
-        if (doc.workPermitStatus === "EU_CITIZEN") {
-          score += 5;
-          reasons.permits = "EU citizen";
-        } else if (doc.workPermitStatus === "WORK_PERMIT") {
-          score += 3;
-          reasons.permits = "Has valid work permit";
-        }
-
-        return { ...job, matchScore: Math.min(score, 100), matchReasons: reasons };
-      })
-      .filter(job => job.matchScore >= parseInt(minMatchScore))
-      .sort((a, b) => b.matchScore - a.matchScore);
-      
-    setAllMatches(potentialMatches);
+    // Use centralized matching algorithm
+    const matches = findMatchingJobs(doc, jobs, parseInt(minMatchScore));
+    setAllMatches(matches);
   }, [minMatchScore]);
 
   const loadData = useCallback(async (doctorId) => {
