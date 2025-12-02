@@ -231,8 +231,10 @@ export default function ApplicationsPage() {
                   <SelectItem value="APPLIED">Applied</SelectItem>
                   <SelectItem value="INTERVIEWING">Interviewing</SelectItem>
                   <SelectItem value="OFFERED">Offered</SelectItem>
-                  <SelectItem value="FAILED">Failed</SelectItem>
+                  <SelectItem value="HIRED">Hired</SelectItem>
                   <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value="WITHDRAWN">Withdrawn</SelectItem>
+                  <SelectItem value="FAILED">Failed</SelectItem>
                   <SelectItem value="QUEUED">Queued</SelectItem>
                 </SelectContent>
               </Select>

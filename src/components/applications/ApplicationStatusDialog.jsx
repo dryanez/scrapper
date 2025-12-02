@@ -29,6 +29,9 @@ export default function ApplicationStatusDialog({ application, doctor, open, onO
     
     setIsSaving(true);
     try {
+      const doctorId = application.doctorId || application.doctor_id;
+      const jobId = application.jobId || application.job_id;
+      
       if (application.type === 'manual') {
         // Update existing manual application
         await Application.update(application.id, {
@@ -38,8 +41,8 @@ export default function ApplicationStatusDialog({ application, doctor, open, onO
       } else if (application.type === 'email') {
         // For email applications, check if a manual Application record exists
         const existingApps = await Application.filter({ 
-          doctorId: application.doctorId, 
-          jobId: application.jobId 
+          doctorId: doctorId, 
+          jobId: jobId 
         });
         
         if (existingApps.length > 0) {
@@ -49,13 +52,11 @@ export default function ApplicationStatusDialog({ application, doctor, open, onO
             notes: notes
           });
         } else {
-          // Create new application record
+          // Create new application record (only valid columns)
           await Application.create({
-            doctorId: application.doctorId,
-            jobId: application.jobId,
-            jobTitle: application.jobTitle,
-            hospitalName: application.hospitalName,
-            appliedAt: application.date.toISOString(),
+            doctorId: doctorId,
+            jobId: jobId,
+            appliedAt: application.date ? application.date.toISOString() : new Date().toISOString(),
             status: selectedStatus,
             notes: notes
           });
@@ -81,6 +82,12 @@ export default function ApplicationStatusDialog({ application, doctor, open, onO
   };
 
   const currentStatusInfo = STATUS_OPTIONS.find(s => s.value === selectedStatus);
+  
+  // Handle snake_case field names
+  const doctorFirstName = doctor?.firstName || doctor?.first_name || '';
+  const doctorLastName = doctor?.lastName || doctor?.last_name || '';
+  const jobTitle = application?.jobTitle || application?.job_title || 'Unknown Position';
+  const hospitalName = application?.hospitalName || application?.hospital_name || '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -96,8 +103,8 @@ export default function ApplicationStatusDialog({ application, doctor, open, onO
           <div className="space-y-2">
             <Label>Application Details</Label>
             <div className="p-3 bg-slate-50 rounded-md text-sm">
-              <div className="font-semibold">{doctor?.firstName} {doctor?.lastName} → {application?.jobTitle}</div>
-              <div className="text-slate-600">{application?.hospitalName}</div>
+              <div className="font-semibold">{doctorFirstName} {doctorLastName} → {jobTitle}</div>
+              <div className="text-slate-600">{hospitalName}</div>
             </div>
           </div>
 
