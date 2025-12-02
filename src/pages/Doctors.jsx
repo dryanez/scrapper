@@ -325,15 +325,25 @@ export default function Doctors() {
                       <p className="text-sm text-slate-500 text-center py-4">All applications are up-to-date!</p>
                     ) : (
                       <>
-                        {actionableData.staleApplications.slice(0, 5).map(app => (
-                          <div key={app.id} className="p-3 bg-orange-50/50 border border-orange-100 rounded-lg">
-                            <div className="font-semibold">{app.doctor.firstName} {app.doctor.lastName}</div>
-                            <div className="text-sm text-slate-600">{app.job.title}</div>
-                            <div className="text-xs text-orange-700 mt-1">
-                              Last update: {formatDistanceToNow(new Date(app.updated_date), { addSuffix: true })}
+                        {actionableData.staleApplications.slice(0, 5).map(app => {
+                          const doctorFirstName = app.doctor?.firstName || app.doctor?.first_name || '';
+                          const doctorLastName = app.doctor?.lastName || app.doctor?.last_name || '';
+                          const updatedDate = app.updated_date || app.updated_at;
+                          const lastUpdate = updatedDate ? new Date(updatedDate) : null;
+                          const isValidDate = lastUpdate && !isNaN(lastUpdate.getTime());
+                          
+                          return (
+                            <div key={app.id} className="p-3 bg-orange-50/50 border border-orange-100 rounded-lg">
+                              <div className="font-semibold">{doctorFirstName} {doctorLastName}</div>
+                              <div className="text-sm text-slate-600">{app.job?.title}</div>
+                              {isValidDate && (
+                                <div className="text-xs text-orange-700 mt-1">
+                                  Last update: {formatDistanceToNow(lastUpdate, { addSuffix: true })}
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         {actionableData.staleApplications.length > 5 && (
                           <p className="text-xs text-slate-500 text-center">... and {actionableData.staleApplications.length - 5} more</p>
                         )}

@@ -124,61 +124,74 @@ export default function FollowUpNeeded() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {filteredApplications.map(app => (
-              <Card key={app.id} className="hover:shadow-md transition-shadow cursor-pointer border-orange-200"
-                onClick={() => {
-                  setSelectedApplication({ ...app, type: 'manual' });
-                  setIsStatusDialogOpen(true);
-                }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={app.doctor.photoUrl || getAnimalAvatar(app.doctor.id, `${app.doctor.firstName} ${app.doctor.lastName}`)} />
-                      <AvatarFallback>{app.doctor.firstName[0]}{app.doctor.lastName[0]}</AvatarFallback>
-                    </Avatar>
+            {filteredApplications.map(app => {
+              const doctorFirstName = app.doctor?.firstName || app.doctor?.first_name || '';
+              const doctorLastName = app.doctor?.lastName || app.doctor?.last_name || '';
+              const photoUrl = app.doctor?.photoUrl || app.doctor?.photo_url || '';
+              const updatedDate = app.updated_date || app.updated_at;
+              const lastUpdate = updatedDate ? new Date(updatedDate) : null;
+              const isValidDate = lastUpdate && !isNaN(lastUpdate.getTime());
+              const jobHospitalName = app.job?.hospitalName || app.job?.hospital_name || '';
+              const jobCity = app.job?.city || '';
+              
+              return (
+                <Card key={app.id} className="hover:shadow-md transition-shadow cursor-pointer border-orange-200"
+                  onClick={() => {
+                    setSelectedApplication({ ...app, type: 'manual' });
+                    setIsStatusDialogOpen(true);
+                  }}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={photoUrl || getAnimalAvatar(app.doctor?.id, `${doctorFirstName} ${doctorLastName}`)} />
+                        <AvatarFallback>{doctorFirstName[0] || '?'}{doctorLastName[0] || '?'}</AvatarFallback>
+                      </Avatar>
 
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-lg text-slate-900">
-                          {app.doctor.firstName} {app.doctor.lastName} → {app.job.title}
-                        </h4>
-                        <div className="flex items-center gap-2">
-                          <Badge className="bg-orange-100 text-orange-800 border-orange-200">
-                            {app.status}
-                          </Badge>
-                          <Badge variant="outline" className={`${daysSinceUpdate(app.updated_date) > 14 ? 'border-red-300 text-red-700' : 'border-orange-300 text-orange-700'}`}>
-                            {daysSinceUpdate(app.updated_date)} days ago
-                          </Badge>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-lg text-slate-900">
+                            {doctorFirstName} {doctorLastName} → {app.job?.title}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                              {app.status}
+                            </Badge>
+                            <Badge variant="outline" className={`${daysSinceUpdate(updatedDate) > 14 ? 'border-red-300 text-red-700' : 'border-orange-300 text-orange-700'}`}>
+                              {daysSinceUpdate(updatedDate)} days ago
+                            </Badge>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="text-slate-600 mb-3">
-                        <div className="font-medium">{app.job.hospitalName}</div>
-                        <div className="text-sm">{app.job.city}</div>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <Clock className="w-4 h-4" />
-                        <span>Last updated: {formatDistanceToNow(new Date(app.updated_date), { addSuffix: true })}</span>
-                      </div>
-
-                      {app.notes && (
-                        <div className="mt-3 p-2 bg-slate-50 rounded text-sm text-slate-700">
-                          <strong>Note:</strong> {app.notes}
+                        <div className="text-slate-600 mb-3">
+                          <div className="font-medium">{jobHospitalName}</div>
+                          <div className="text-sm">{jobCity}</div>
                         </div>
-                      )}
 
-                      <div className="mt-4">
-                        <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
-                          Update Status
-                        </Button>
+                        {isValidDate && (
+                          <div className="flex items-center gap-2 text-sm text-slate-500">
+                            <Clock className="w-4 h-4" />
+                            <span>Last updated: {formatDistanceToNow(lastUpdate, { addSuffix: true })}</span>
+                          </div>
+                        )}
+
+                        {app.notes && (
+                          <div className="mt-3 p-2 bg-slate-50 rounded text-sm text-slate-700">
+                            <strong>Note:</strong> {app.notes}
+                          </div>
+                        )}
+
+                        <div className="mt-4">
+                          <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
+                            Update Status
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 

@@ -477,23 +477,31 @@ export default function JobDetails() {
                   <div className="space-y-4">
                     {applications.map((app) => {
                       const doctor = doctors.find(d => d.id === app.doctorId);
+                      const doctorFirstName = doctor?.firstName || doctor?.first_name || '';
+                      const doctorLastName = doctor?.lastName || doctor?.last_name || '';
+                      const appliedAt = app.appliedAt || app.applied_at || app.created_at;
+                      const appliedDate = appliedAt ? new Date(appliedAt) : null;
+                      const isValidDate = appliedDate && !isNaN(appliedDate.getTime());
+                      
                       return (
                         <div key={app.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
                           <div>
                             {doctor ? (
-                              <Link to={createPageUrl(`DoctorDetail?id=${app.doctorId}`)} className="font-semibold text-blue-700 hover:underline">
-                                {`${doctor.firstName} ${doctor.lastName}`}
+                              <Link to={createPageUrl(`DoctorDetail?id=${app.doctorId || app.doctor_id}`)} className="font-semibold text-blue-700 hover:underline">
+                                {`${doctorFirstName} ${doctorLastName}`}
                               </Link>
                             ) : (
-                              <span className="font-semibold">Doctor ID: {app.doctorId}</span>
+                              <span className="font-semibold">Doctor ID: {app.doctorId || app.doctor_id}</span>
                             )}
                             {app.notes && <p className="text-sm text-slate-500">{app.notes}</p>}
                           </div>
                           <div className="text-right text-sm">
                             <div className="font-medium text-slate-800">{app.status}</div>
-                            <div className="text-slate-500" title={new Date(app.appliedAt).toLocaleString()}>
-                              {formatDistanceToNow(new Date(app.appliedAt), { addSuffix: true })}
-                            </div>
+                            {isValidDate && (
+                              <div className="text-slate-500" title={appliedDate.toLocaleString()}>
+                                {formatDistanceToNow(appliedDate, { addSuffix: true })}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )
