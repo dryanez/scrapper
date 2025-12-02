@@ -51,17 +51,24 @@ export default function UnmatchedDoctors() {
   }, [loadData]);
 
   const filteredDoctors = unmatchedDoctors.filter(doctor => {
+    const firstName = doctor.firstName || doctor.first_name || '';
+    const lastName = doctor.lastName || doctor.last_name || '';
+    const email = doctor.email || '';
+    const specialties = doctor.specialties || [];
+    const currentState = doctor.currentState || doctor.current_state || '';
+    const desiredStates = doctor.desiredStates || doctor.desired_states || [];
+
     const matchesSearch = !searchTerm ||
-      `${doctor.firstName} ${doctor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.specialties?.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      doctor.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      `${firstName} ${lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      specialties.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesSpecialty = specialtyFilter === "all" ||
-      doctor.specialties?.includes(specialtyFilter);
+      specialties.includes(specialtyFilter);
 
     const matchesState = stateFilter === "all" ||
-      doctor.currentState === stateFilter ||
-      doctor.desiredStates?.includes(stateFilter);
+      currentState === stateFilter ||
+      desiredStates.includes(stateFilter);
 
     return matchesSearch && matchesSpecialty && matchesState;
   });
@@ -152,78 +159,93 @@ export default function UnmatchedDoctors() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDoctors.map(doctor => (
-              <Card key={doctor.id} className="hover:shadow-lg transition-shadow border-green-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={doctor.photoUrl || getAnimalAvatar(doctor.id, `${doctor.firstName} ${doctor.lastName}`)} />
-                      <AvatarFallback>{doctor.firstName[0]}{doctor.lastName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-slate-900">{doctor.firstName} {doctor.lastName}</h3>
-                      <p className="text-sm text-slate-500">{doctor.email}</p>
+            {filteredDoctors.map(doctor => {
+              const firstName = doctor.firstName || doctor.first_name || '';
+              const lastName = doctor.lastName || doctor.last_name || '';
+              const email = doctor.email || '';
+              const phone = doctor.phone || '';
+              const photoUrl = doctor.photoUrl || doctor.photo_url || '';
+              const specialties = doctor.specialties || [];
+              const experienceYears = doctor.experienceYears ?? doctor.experience_years;
+              const currentState = doctor.currentState || doctor.current_state || '';
+              const desiredStates = doctor.desiredStates || doctor.desired_states || [];
+              const workPermitStatus = doctor.workPermitStatus || doctor.work_permit_status || '';
+              
+              return (
+                <Card key={doctor.id} className="hover:shadow-lg transition-shadow border-green-200">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={photoUrl || getAnimalAvatar(doctor.id, `${firstName} ${lastName}`)} />
+                        <AvatarFallback>{firstName[0] || '?'}{lastName[0] || '?'}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-slate-900">{firstName} {lastName}</h3>
+                        <p className="text-sm text-slate-500">{email}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-3 mb-4">
-                    {doctor.specialties?.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {doctor.specialties.slice(0, 2).map((specialty, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                            {specialty}
-                          </Badge>
-                        ))}
-                        {doctor.specialties.length > 2 && (
-                          <Badge variant="outline" className="text-xs">+{doctor.specialties.length - 2}</Badge>
+                    <div className="space-y-3 mb-4">
+                      {specialties.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {specialties.slice(0, 2).map((specialty, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              {specialty}
+                            </Badge>
+                          ))}
+                          {specialties.length > 2 && (
+                            <Badge variant="outline" className="text-xs">+{specialties.length - 2}</Badge>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="text-sm text-slate-600 space-y-1">
+                        {experienceYears && (
+                          <div>Experience: {experienceYears} years</div>
+                        )}
+                        {currentState && (
+                          <div>Current: {GERMAN_STATES[currentState]}</div>
+                        )}
+                        {desiredStates.length > 0 && (
+                          <div>Wants: {desiredStates.slice(0, 2).map(s => GERMAN_STATES[s]).join(', ')}</div>
                         )}
                       </div>
-                    )}
 
-                    <div className="text-sm text-slate-600 space-y-1">
-                      {doctor.experienceYears && (
-                        <div>Experience: {doctor.experienceYears} years</div>
-                      )}
-                      {doctor.currentState && (
-                        <div>Current: {GERMAN_STATES[doctor.currentState]}</div>
-                      )}
-                      {doctor.desiredStates?.length > 0 && (
-                        <div>Wants: {doctor.desiredStates.slice(0, 2).map(s => GERMAN_STATES[s]).join(', ')}</div>
+                      {workPermitStatus && (
+                        <Badge className={`text-xs ${workPermitStyles[workPermitStatus]}`}>
+                          {workPermitStatus.replace('_', ' ')}
+                        </Badge>
                       )}
                     </div>
 
-                    {doctor.workPermitStatus && (
-                      <Badge className={`text-xs ${workPermitStyles[doctor.workPermitStatus]}`}>
-                        {doctor.workPermitStatus.replace('_', ' ')}
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <Link to={createPageUrl(`DoctorDetail?id=${doctor.id}`)} className="w-full">
-                      <Button className="w-full bg-green-600 hover:bg-green-700">
-                        <Briefcase className="w-4 h-4 mr-2" />
-                        Find Jobs
-                      </Button>
-                    </Link>
-                    <div className="flex gap-2">
-                      <a href={`mailto:${doctor.email}`} className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Mail className="w-4 h-4" />
+                    <div className="flex flex-col gap-2">
+                      <Link to={createPageUrl(`DoctorDetail?id=${doctor.id}`)} className="w-full">
+                        <Button className="w-full bg-green-600 hover:bg-green-700">
+                          <Briefcase className="w-4 h-4 mr-2" />
+                          Find Jobs
                         </Button>
-                      </a>
-                      {doctor.phone && (
-                        <a href={`tel:${doctor.phone}`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full">
-                            <Phone className="w-4 h-4" />
-                          </Button>
-                        </a>
-                      )}
+                      </Link>
+                      <div className="flex gap-2">
+                        {email && (
+                          <a href={`mailto:${email}`} className="flex-1">
+                            <Button variant="outline" size="sm" className="w-full">
+                              <Mail className="w-4 h-4" />
+                            </Button>
+                          </a>
+                        )}
+                        {phone && (
+                          <a href={`tel:${phone}`} className="flex-1">
+                            <Button variant="outline" size="sm" className="w-full">
+                              <Phone className="w-4 h-4" />
+                            </Button>
+                          </a>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

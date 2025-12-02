@@ -329,17 +329,22 @@ export default function Doctors() {
                       <p className="text-sm text-slate-500 text-center py-4">All doctors have active applications.</p>
                     ) : (
                       <>
-                        {actionableData.unmatchedDoctors.slice(0, 5).map(doctor => (
-                          <div key={doctor.id} className="p-3 bg-green-50/50 border border-green-100 rounded-lg flex items-center justify-between">
-                            <div>
-                              <div className="font-semibold text-sm">{doctor.firstName} {doctor.lastName}</div>
-                              <div className="text-xs text-slate-600">{doctor.specialties?.slice(0, 2).join(', ')}</div>
+                        {actionableData.unmatchedDoctors.slice(0, 5).map(doctor => {
+                          const firstName = doctor.firstName || doctor.first_name || '';
+                          const lastName = doctor.lastName || doctor.last_name || '';
+                          const specialties = doctor.specialties || [];
+                          return (
+                            <div key={doctor.id} className="p-3 bg-green-50/50 border border-green-100 rounded-lg flex items-center justify-between">
+                              <div>
+                                <div className="font-semibold text-sm">{firstName} {lastName}</div>
+                                <div className="text-xs text-slate-600">{specialties.slice(0, 2).join(', ')}</div>
+                              </div>
+                              <Link to={createPageUrl(`DoctorDetail?id=${doctor.id}`)}>
+                                  <Button size="sm" variant="outline" className="text-xs px-2">View</Button>
+                              </Link>
                             </div>
-                            <Link to={createPageUrl(`DoctorDetail?id=${doctor.id}`)}>
-                                <Button size="sm" variant="outline" className="text-xs px-2">View</Button>
-                            </Link>
-                          </div>
-                        ))}
+                          );
+                        })}
                         {actionableData.unmatchedDoctors.length > 5 && (
                           <p className="text-xs text-slate-500 text-center">... and {actionableData.unmatchedDoctors.length - 5} more</p>
                         )}
