@@ -24,6 +24,7 @@ export default function ApplicationsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
+  const [doctorFilter, setDoctorFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
@@ -33,6 +34,15 @@ export default function ApplicationsPage() {
     interviewing: 0,
     successRate: 0,
   });
+
+  // Check URL params for doctorId filter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const doctorIdParam = urlParams.get('doctorId');
+    if (doctorIdParam) {
+      setDoctorFilter(doctorIdParam);
+    }
+  }, []);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -140,13 +150,23 @@ export default function ApplicationsPage() {
     
     const matchesStatus = statusFilter === "all" || app.status === statusFilter;
     
+    const matchesDoctor = doctorFilter === "all" || app.doctorId === doctorFilter;
+    
     const appDate = app.date;
     const matchesTime = timeFilter === "all" ||
       (timeFilter === "week" && appDate >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) ||
       (timeFilter === "month" && appDate >= startOfMonth(new Date()));
     
-    return matchesSearch && matchesStatus && matchesTime;
+    return matchesSearch && matchesStatus && matchesTime && matchesDoctor;
   });
+
+  // Get unique doctors from applications for the filter dropdown
+  const doctorsWithApplications = doctors.filter(d => 
+    allApplications.some(app => app.doctorId === d.id)
+  ).map(d => ({
+    id: d.id,
+    name: `${d.firstName || d.first_name || ''} ${d.lastName || d.last_name || ''}`.trim()
+  })).sort((a, b) => a.name.localeCompare(b.name));
 
   const getStatusInfo = (app) => {
     const commonStatuses = {
@@ -183,7 +203,65 @@ export default function ApplicationsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-8"><CardContent className="p-6"><div className="flex flex-col lg:flex-row gap-4"><div className="flex-1 relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" /><Input placeholder="Search by doctor, job title, or hospital..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" /></div><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="SENT">Sent</SelectItem><SelectItem value="APPLIED">Applied</SelectItem><SelectItem value="INTERVIEWING">Interviewing</SelectItem><SelectItem value="OFFERED">Offered</SelectItem><SelectItem value="FAILED">Failed</SelectItem><SelectItem value="REJECTED">Rejected</SelectItem><SelectItem value="QUEUED">Queued</SelectItem></SelectContent></Select><Select value={timeFilter} onValueChange={setTimeFilter}><SelectTrigger className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Time</SelectItem><SelectItem value="week">This Week</SelectItem><SelectItem value="month">This Month</SelectItem></SelectContent></Select></div></CardContent></Card>
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Input placeholder="Search by doctor, job title, or hospital..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+              </div>
+              <Select value={doctorFilter} onValueChange={setDoctorFilter}>
+                <SelectTrigger className="w-56">
+                  <SelectValue placeholder="Filter by Doctor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Doctors</SelectItem>
+                  {doctorsWithApplications.map(d => (
+                    <SelectItem key={d.id} value={d.id}>{d.name || 'Unknown'}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="SENT">Sent</SelectItem>
+                  <SelectItem value="APPLIED">Applied</SelectItem>
+                  <SelectItem value="INTERVIEWING">Interviewing</SelectItem>
+                  <SelectItem value="OFFERED">Offered</SelectItem>
+                  <SelectItem value="FAILED">Failed</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value="QUEUED">Queued</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={timeFilter} onValueChange={setTimeFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {doctorFilter !== "all" && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+                <span className="text-sm text-blue-800">
+                  Showing applications for: <strong>{doctorsWithApplications.find(d => d.id === doctorFilter)?.name || 'Selected Doctor'}</strong>
+                </span>
+                <button 
+                  onClick={() => setDoctorFilter("all")} 
+                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                >
+                  Clear filter
+                </button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Application List */}
         <div className="space-y-4">

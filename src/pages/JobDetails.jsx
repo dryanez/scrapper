@@ -476,24 +476,31 @@ export default function JobDetails() {
                 ) : (
                   <div className="space-y-4">
                     {applications.map((app) => {
-                      const doctor = doctors.find(d => d.id === app.doctorId);
+                      const doctorId = app.doctorId || app.doctor_id;
+                      const doctor = doctors.find(d => d.id === doctorId);
                       const doctorFirstName = doctor?.firstName || doctor?.first_name || '';
                       const doctorLastName = doctor?.lastName || doctor?.last_name || '';
                       const appliedAt = app.appliedAt || app.applied_at || app.created_at;
                       const appliedDate = appliedAt ? new Date(appliedAt) : null;
                       const isValidDate = appliedDate && !isNaN(appliedDate.getTime());
+                      const hasDoctor = doctorFirstName || doctorLastName;
                       
                       return (
                         <div key={app.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
-                          <div>
-                            {doctor ? (
-                              <Link to={createPageUrl(`DoctorDetail?id=${app.doctorId || app.doctor_id}`)} className="font-semibold text-blue-700 hover:underline">
-                                {`${doctorFirstName} ${doctorLastName}`}
-                              </Link>
+                          <div className="flex-1">
+                            {hasDoctor ? (
+                              <div className="flex items-center gap-2">
+                                <Link to={createPageUrl(`DoctorDetail?id=${doctorId}`)} className="font-semibold text-blue-700 hover:underline">
+                                  {`${doctorFirstName} ${doctorLastName}`.trim()}
+                                </Link>
+                                <Link to={createPageUrl(`Applications?doctorId=${doctorId}`)} className="text-xs text-slate-500 hover:text-blue-600">
+                                  (View all applications)
+                                </Link>
+                              </div>
                             ) : (
-                              <span className="font-semibold">Doctor ID: {app.doctorId || app.doctor_id}</span>
+                              <span className="font-semibold text-slate-600">Unknown Doctor</span>
                             )}
-                            {app.notes && <p className="text-sm text-slate-500">{app.notes}</p>}
+                            {app.notes && <p className="text-sm text-slate-500 mt-1">{app.notes}</p>}
                           </div>
                           <div className="text-right text-sm">
                             <div className="font-medium text-slate-800">{app.status}</div>
