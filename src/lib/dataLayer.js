@@ -46,7 +46,7 @@ const fieldMapping = {
 
 // Fields that don't exist in specific tables
 const tableExcludedFields = {
-  'applications': ['jobTitle', 'job_title', 'hospitalName', 'hospital_name', 'status'],
+  'applications': ['jobTitle', 'job_title', 'hospitalName', 'hospital_name'],
   'jobs': ['status', 'hospitalLogo'],
 };
 
