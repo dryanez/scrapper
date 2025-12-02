@@ -44,30 +44,40 @@ export default function ApplicationsPage() {
         Job.list("-created_date", 1000)
       ]);
       
-      const mappedEmails = emailData.map(e => ({
-        id: e.id,
-        type: 'email',
-        doctorId: e.doctorId,
-        jobId: e.jobId,
-        status: e.status,
-        date: new Date(e.created_date),
-        details: { subject: e.subject, to: e.toEmail },
-        errorMessage: e.errorMessage,
-        jobTitle: jobData.find(j => j.id === e.jobId)?.title,
-        hospitalName: jobData.find(j => j.id === e.jobId)?.hospitalName,
-      }));
+      const mappedEmails = emailData.map(e => {
+        const createdDate = e.created_date || e.createdDate || e.created_at;
+        const emailDate = createdDate ? new Date(createdDate) : null;
+        const job = jobData.find(j => j.id === e.jobId);
+        return {
+          id: e.id,
+          type: 'email',
+          doctorId: e.doctorId || e.doctor_id,
+          jobId: e.jobId || e.job_id,
+          status: e.status,
+          date: emailDate && !isNaN(emailDate.getTime()) ? emailDate : new Date(),
+          details: { subject: e.subject, to: e.toEmail || e.to_email },
+          errorMessage: e.errorMessage || e.error_message,
+          jobTitle: job?.title,
+          hospitalName: job?.hospitalName || job?.hospital_name,
+        };
+      });
 
-      const mappedManualApps = applicationData.map(a => ({
-        id: a.id,
-        type: 'manual',
-        doctorId: a.doctorId,
-        jobId: a.jobId,
-        status: a.status,
-        date: new Date(a.appliedAt),
-        details: { notes: a.notes },
-        jobTitle: a.jobTitle,
-        hospitalName: a.hospitalName,
-      }));
+      const mappedManualApps = applicationData.map(a => {
+        const appliedAt = a.appliedAt || a.applied_at || a.created_at;
+        const appDate = appliedAt ? new Date(appliedAt) : null;
+        const job = jobData.find(j => j.id === (a.jobId || a.job_id));
+        return {
+          id: a.id,
+          type: 'manual',
+          doctorId: a.doctorId || a.doctor_id,
+          jobId: a.jobId || a.job_id,
+          status: a.status,
+          date: appDate && !isNaN(appDate.getTime()) ? appDate : new Date(),
+          details: { notes: a.notes },
+          jobTitle: job?.title || 'Unknown Position',
+          hospitalName: job?.hospitalName || job?.hospital_name || 'Unknown Hospital',
+        };
+      });
 
       const combinedData = [...mappedEmails, ...mappedManualApps].sort((a, b) => b.date - a.date);
       
@@ -120,15 +130,17 @@ export default function ApplicationsPage() {
 
   const filteredApplications = allApplications.filter(app => {
     const doctor = getDoctor(app.doctorId);
+    const firstName = doctor?.firstName || doctor?.first_name || '';
+    const lastName = doctor?.lastName || doctor?.last_name || '';
     
     const matchesSearch = !searchTerm || 
-      (doctor && `${doctor.firstName} ${doctor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      `${firstName} ${lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (app.jobTitle && app.jobTitle.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (app.hospitalName && app.hospitalName.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = statusFilter === "all" || app.status === statusFilter;
     
-    const appDate = new Date(app.date);
+    const appDate = app.date;
     const matchesTime = timeFilter === "all" ||
       (timeFilter === "week" && appDate >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) ||
       (timeFilter === "month" && appDate >= startOfMonth(new Date()));
@@ -182,8 +194,12 @@ export default function ApplicationsPage() {
           ) : (
             filteredApplications.map((app) => {
               const doctor = getDoctor(app.doctorId);
+              const firstName = doctor?.firstName || doctor?.first_name || '';
+              const lastName = doctor?.lastName || doctor?.last_name || '';
+              const photoUrl = doctor?.photoUrl || doctor?.photo_url || '';
               const statusInfo = getStatusInfo(app);
               const isClickable = !(app.type === 'email' && (app.status === 'FAILED' || app.status === 'QUEUED'));
+              const isValidDate = app.date && !isNaN(app.date.getTime());
               
               return (
                 <Card 
@@ -193,19 +209,19 @@ export default function ApplicationsPage() {
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <Avatar className="w-12 h-12 flex-shrink-0"><AvatarImage src={doctor?.photoUrl || getAnimalAvatar(app.doctorId, `${doctor?.firstName} ${doctor?.lastName}`)} /><AvatarFallback>{doctor ? `${doctor.firstName?.[0]}${doctor.lastName?.[0]}` : 'DR'}</AvatarFallback></Avatar>
+                      <Avatar className="w-12 h-12 flex-shrink-0"><AvatarImage src={photoUrl || getAnimalAvatar(app.doctorId, `${firstName} ${lastName}`)} /><AvatarFallback>{firstName[0] || '?'}{lastName[0] || '?'}</AvatarFallback></Avatar>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
                           {statusInfo.icon}
                           <Badge className={statusInfo.badge}>{app.status}</Badge>
-                          <span className="text-sm text-slate-500">{formatDistanceToNow(app.date, { addSuffix: true })}</span>
+                          {isValidDate && <span className="text-sm text-slate-500">{formatDistanceToNow(app.date, { addSuffix: true })}</span>}
                           <Badge variant="outline" className="flex items-center gap-1">{app.type === 'email' ? <Mail className="w-3 h-3" /> : <Edit className="w-3 h-3" />} {app.type}</Badge>
                           {isClickable && <span className="text-xs text-slate-400">Click to update status</span>}
                         </div>
                         
                         <h4 className="font-semibold text-slate-900 mb-2">
-                           <Link to={createPageUrl(`DoctorDetail?id=${app.doctorId}`)} className="text-blue-700 hover:underline" onClick={(e) => e.stopPropagation()}>{doctor ? `${doctor.firstName} ${doctor.lastName}` : 'Unknown Doctor'}</Link> → <Link to={createPageUrl(`JobDetails?id=${app.jobId}`)} className="text-blue-700 hover:underline" onClick={(e) => e.stopPropagation()}>{app.jobTitle || 'Unknown Position'}</Link>
+                           <Link to={createPageUrl(`DoctorDetail?id=${app.doctorId}`)} className="text-blue-700 hover:underline" onClick={(e) => e.stopPropagation()}>{firstName || lastName ? `${firstName} ${lastName}` : 'Unknown Doctor'}</Link> → <Link to={createPageUrl(`JobDetails?id=${app.jobId}`)} className="text-blue-700 hover:underline" onClick={(e) => e.stopPropagation()}>{app.jobTitle || 'Unknown Position'}</Link>
                         </h4>
                         
                         <div className="text-sm text-slate-600 mb-1">
