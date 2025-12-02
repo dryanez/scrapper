@@ -58,36 +58,57 @@ export default function ApplicationsPage() {
         const createdDate = e.created_date || e.createdDate || e.created_at;
         const emailDate = createdDate ? new Date(createdDate) : null;
         const job = jobData.find(j => j.id === e.jobId);
+        const doctorId = e.doctorId || e.doctor_id;
+        const jobId = e.jobId || e.job_id;
+        
+        // Check if there's an Application record for this email (with updated status)
+        const linkedApp = applicationData.find(a => 
+          (a.doctorId || a.doctor_id) === doctorId && 
+          (a.jobId || a.job_id) === jobId
+        );
+        
         return {
           id: e.id,
           type: 'email',
-          doctorId: e.doctorId || e.doctor_id,
-          jobId: e.jobId || e.job_id,
-          status: e.status,
+          doctorId: doctorId,
+          jobId: jobId,
+          // Use linked application status if exists, otherwise use email status
+          status: linkedApp?.status || e.status,
           date: emailDate && !isNaN(emailDate.getTime()) ? emailDate : new Date(),
-          details: { subject: e.subject, to: e.toEmail || e.to_email },
+          details: { subject: e.subject, to: e.toEmail || e.to_email, notes: linkedApp?.notes },
           errorMessage: e.errorMessage || e.error_message,
           jobTitle: job?.title,
           hospitalName: job?.hospitalName || job?.hospital_name,
+          linkedApplicationId: linkedApp?.id, // Track the linked application
         };
       });
 
-      const mappedManualApps = applicationData.map(a => {
-        const appliedAt = a.appliedAt || a.applied_at || a.created_at;
-        const appDate = appliedAt ? new Date(appliedAt) : null;
-        const job = jobData.find(j => j.id === (a.jobId || a.job_id));
-        return {
-          id: a.id,
-          type: 'manual',
-          doctorId: a.doctorId || a.doctor_id,
-          jobId: a.jobId || a.job_id,
-          status: a.status,
-          date: appDate && !isNaN(appDate.getTime()) ? appDate : new Date(),
-          details: { notes: a.notes },
-          jobTitle: job?.title || 'Unknown Position',
-          hospitalName: job?.hospitalName || job?.hospital_name || 'Unknown Hospital',
-        };
-      });
+      // Get IDs of applications that are already linked to emails
+      const linkedAppIds = new Set(
+        mappedEmails
+          .filter(e => e.linkedApplicationId)
+          .map(e => e.linkedApplicationId)
+      );
+
+      const mappedManualApps = applicationData
+        // Filter out applications that are already linked to emails
+        .filter(a => !linkedAppIds.has(a.id))
+        .map(a => {
+          const appliedAt = a.appliedAt || a.applied_at || a.created_at;
+          const appDate = appliedAt ? new Date(appliedAt) : null;
+          const job = jobData.find(j => j.id === (a.jobId || a.job_id));
+          return {
+            id: a.id,
+            type: 'manual',
+            doctorId: a.doctorId || a.doctor_id,
+            jobId: a.jobId || a.job_id,
+            status: a.status,
+            date: appDate && !isNaN(appDate.getTime()) ? appDate : new Date(),
+            details: { notes: a.notes },
+            jobTitle: job?.title || 'Unknown Position',
+            hospitalName: job?.hospitalName || job?.hospital_name || 'Unknown Hospital',
+          };
+        });
 
       const combinedData = [...mappedEmails, ...mappedManualApps].sort((a, b) => b.date - a.date);
       
@@ -179,6 +200,8 @@ export default function ApplicationsPage() {
       INTERVIEWING: { icon: <Users className="w-4 h-4 text-blue-600" />, badge: "bg-blue-100 text-blue-800" },
       OFFERED: { icon: <Target className="w-4 h-4 text-purple-600" />, badge: "bg-purple-100 text-purple-800" },
       REJECTED: { icon: <XCircle className="w-4 h-4 text-gray-500" />, badge: "bg-gray-100 text-gray-700" },
+      HIRED: { icon: <CheckCircle className="w-4 h-4 text-green-600" />, badge: "bg-green-100 text-green-800" },
+      WITHDRAWN: { icon: <XCircle className="w-4 h-4 text-red-600" />, badge: "bg-red-100 text-red-800" },
     };
     return commonStatuses[app.status] || { icon: <Clock className="w-4 h-4" />, badge: "bg-gray-200" };
   };
@@ -312,6 +335,11 @@ export default function ApplicationsPage() {
                           <div className="text-sm">
                             <div className="font-medium truncate">{app.details.subject}</div>
                             <div className="text-slate-500">To: {app.details.to}</div>
+                            {app.details.notes && (
+                              <div className="mt-2 p-2 bg-slate-50 border rounded-md text-sm text-slate-700">
+                                Note: {app.details.notes}
+                              </div>
+                            )}
                           </div>
                         )}
 
