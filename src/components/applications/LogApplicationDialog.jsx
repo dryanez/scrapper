@@ -17,6 +17,13 @@ export default function LogApplicationDialog({ job, open, onOpenChange, onSucces
   const [isComboOpen, setIsComboOpen] = useState(false);
   const { toast } = useToast();
 
+  // Helper to get doctor name with snake_case handling
+  const getDoctorName = (doctor) => {
+    const firstName = doctor.firstName || doctor.first_name || '';
+    const lastName = doctor.lastName || doctor.last_name || '';
+    return `${firstName} ${lastName}`.trim();
+  };
+
   useEffect(() => {
     if (open) {
       const fetchDoctors = async () => {
@@ -42,11 +49,12 @@ export default function LogApplicationDialog({ job, open, onOpenChange, onSucces
     
     setIsSaving(true);
     try {
+      const hospitalName = job.hospitalName || job.hospital_name || '';
       await Application.create({
         jobId: job.id,
         doctorId: selectedDoctor.id,
         jobTitle: job.title,
-        hospitalName: job.hospitalName,
+        hospitalName: hospitalName,
         appliedAt: new Date().toISOString(),
         status: "APPLIED",
         notes: notes,
@@ -54,7 +62,7 @@ export default function LogApplicationDialog({ job, open, onOpenChange, onSucces
 
       toast({
         title: "Application Logged",
-        description: `Logged application for ${selectedDoctor.firstName} ${selectedDoctor.lastName} to "${job.title}".`,
+        description: `Logged application for ${getDoctorName(selectedDoctor)} to "${job.title}".`,
       });
       onSuccess();
     } catch (error) {
@@ -97,7 +105,7 @@ export default function LogApplicationDialog({ job, open, onOpenChange, onSucces
                   id="doctor-combo"
                 >
                   {selectedDoctor
-                    ? `${selectedDoctor.firstName} ${selectedDoctor.lastName}`
+                    ? getDoctorName(selectedDoctor)
                     : "Select a doctor..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -107,21 +115,25 @@ export default function LogApplicationDialog({ job, open, onOpenChange, onSucces
                   <CommandInput placeholder="Search doctor..." />
                   <CommandEmpty>No doctor found.</CommandEmpty>
                   <CommandGroup className="max-h-60 overflow-y-auto">
-                    {doctors.map((doctor) => (
-                      <CommandItem
-                        key={doctor.id}
-                        value={`${doctor.firstName} ${doctor.lastName} ${doctor.email}`}
-                        onSelect={() => {
-                          setSelectedDoctor(doctor);
-                          setIsComboOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={`mr-2 h-4 w-4 ${selectedDoctor?.id === doctor.id ? "opacity-100" : "opacity-0"}`}
-                        />
-                        {doctor.firstName} {doctor.lastName}
-                      </CommandItem>
-                    ))}
+                    {doctors.map((doctor) => {
+                      const doctorName = getDoctorName(doctor);
+                      const doctorEmail = doctor.email || '';
+                      return (
+                        <CommandItem
+                          key={doctor.id}
+                          value={`${doctorName} ${doctorEmail}`}
+                          onSelect={() => {
+                            setSelectedDoctor(doctor);
+                            setIsComboOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${selectedDoctor?.id === doctor.id ? "opacity-100" : "opacity-0"}`}
+                          />
+                          {doctorName}
+                        </CommandItem>
+                      );
+                    })}
                   </CommandGroup>
                 </Command>
               </PopoverContent>

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Search, Users, Upload, CheckCircle, AlertCircle, Activity, BellRing, UserX, FileClock, RotateCcw } from "lucide-react";
+import { Plus, Search, Users, Upload, CheckCircle, AlertCircle, Activity, BellRing, UserX, FileClock, RotateCcw, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import DoctorCard from "../components/doctors/DoctorCard";
@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getAnimalAvatar } from "../components/utils/AvatarGenerator";
 import { Badge } from "@/components/ui/badge";
 import { loadSeedDoctors } from "@/data/seedDoctors";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 export default function Doctors() {
@@ -103,12 +104,46 @@ export default function Doctors() {
     setAlert({ type: 'success', message: 'Application status updated successfully.' });
   };
 
-  const filteredDoctors = doctors.filter(doctor =>
-    !searchTerm || 
-    `${doctor.firstName} ${doctor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doctor.specialties?.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    doctor.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Delete single doctor
+  const handleDeleteDoctor = async (doctorId) => {
+    try {
+      await Doctor.delete(doctorId);
+      setDoctors(prev => prev.filter(d => d.id !== doctorId));
+      setAlert({ type: 'success', message: 'Doctor deleted successfully.' });
+      loadData(); // Refresh action center data too
+    } catch (error) {
+      console.error("Error deleting doctor:", error);
+      setAlert({ type: 'error', message: 'Failed to delete doctor.' });
+    }
+  };
+
+  // Delete all doctors
+  const handleDeleteAllDoctors = async () => {
+    try {
+      // Delete all doctors one by one
+      for (const doctor of doctors) {
+        await Doctor.delete(doctor.id);
+      }
+      setDoctors([]);
+      setAlert({ type: 'success', message: `All ${doctors.length} doctors deleted successfully.` });
+      loadData();
+    } catch (error) {
+      console.error("Error deleting all doctors:", error);
+      setAlert({ type: 'error', message: 'Failed to delete all doctors.' });
+    }
+  };
+
+  const filteredDoctors = doctors.filter(doctor => {
+    const firstName = doctor.firstName || doctor.first_name || '';
+    const lastName = doctor.lastName || doctor.last_name || '';
+    const email = doctor.email || '';
+    const specialties = doctor.specialties || [];
+    
+    return !searchTerm || 
+      `${firstName} ${lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      specialties.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
@@ -120,6 +155,35 @@ export default function Doctors() {
             <p className="text-slate-600">Manage your medical professional database</p>
           </div>
           <div className="flex gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline"
+                  className="border-red-500 text-red-600 hover:bg-red-50"
+                  disabled={doctors.length === 0}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete All ({doctors.length})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete All Doctors?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete all {doctors.length} doctors from the database. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAllDoctors}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Delete All
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button 
               onClick={async () => {
                 setIsLoading(true);
@@ -225,7 +289,12 @@ export default function Doctors() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredDoctors.map((doctor) => (
-                  <DoctorCard key={doctor.id} doctor={doctor} />
+                  <DoctorCard 
+                    key={doctor.id} 
+                    doctor={doctor} 
+                    showDelete={true}
+                    onDelete={handleDeleteDoctor}
+                  />
                 ))}
               </div>
             )}

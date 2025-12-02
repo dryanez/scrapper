@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Phone, Globe, MapPin, Briefcase } from "lucide-react";
+import { Mail, Phone, Globe, MapPin, Briefcase, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getAnimalAvatar } from "../utils/AvatarGenerator";
 
-export default function DoctorCard({ doctor }) {
+export default function DoctorCard({ doctor, onDelete, showDelete = false }) {
   // Handle both camelCase and snake_case field names from Supabase
   const firstName = doctor.firstName || doctor.first_name || '';
   const lastName = doctor.lastName || doctor.last_name || '';
@@ -120,6 +120,19 @@ export default function DoctorCard({ doctor }) {
                   <Phone className="w-4 h-4" />
                 </Button>
               </a>
+            )}
+            {showDelete && onDelete && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onDelete(doctor.id);
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             )}
           </div>
         </div>
