@@ -12,7 +12,9 @@ import {
   Database,
   ChevronRight,
   Activity,
-  TrendingUp
+  TrendingUp,
+  Save,
+  Loader2
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,6 +30,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { subscribeToSaveProgress, getSaveState } from "@/services/backgroundJobSaver";
+import { Progress } from "@/components/ui/progress";
 
 const navigationItems = [
   {
@@ -108,6 +112,15 @@ export default function Layout({ children, currentPageName }) {
     applicationsSent: 0,
     totalHospitals: 0,
   });
+  const [backgroundSave, setBackgroundSave] = React.useState(getSaveState());
+
+  // Subscribe to background save progress
+  React.useEffect(() => {
+    const unsubscribe = subscribeToSaveProgress((progress) => {
+      setBackgroundSave({ ...progress });
+    });
+    return unsubscribe;
+  }, []);
 
   React.useEffect(() => {
     const fetchUser = async () => {
@@ -238,6 +251,25 @@ export default function Layout({ children, currentPageName }) {
           </SidebarContent>
 
           <SidebarFooter className="border-t border-border/50 p-4">
+            {/* Background Save Progress Indicator */}
+            {backgroundSave.isRunning && (
+              <div className="mb-3 p-3 rounded-xl bg-green-500/10 border border-green-500/20 animate-pulse">
+                <div className="flex items-center gap-2 mb-2">
+                  <Loader2 className="w-4 h-4 text-green-400 animate-spin" />
+                  <span className="text-xs font-medium text-green-400">Saving Jobs...</span>
+                </div>
+                <Progress value={backgroundSave.percentage} className="h-1.5" />
+                <div className="flex justify-between mt-1">
+                  <span className="text-[10px] text-muted-foreground">
+                    {backgroundSave.current} / {backgroundSave.total}
+                  </span>
+                  <span className="text-[10px] text-green-400">
+                    {Math.round(backgroundSave.percentage)}%
+                  </span>
+                </div>
+              </div>
+            )}
+            
             <div className="flex items-center gap-3 p-2 rounded-xl bg-secondary/30 transition-all duration-300 hover:bg-secondary/50">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-lg shadow-primary/20">
                 <span className="text-primary-foreground font-bold text-sm">

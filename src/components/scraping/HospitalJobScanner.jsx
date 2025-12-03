@@ -27,7 +27,13 @@ import {
   MapPin,
   Pause
 } from "lucide-react";
-import { scrapeMultipleHospitals, saveScrapedJobs } from "@/services/jobScraper";
+import { scrapeMultipleHospitals } from "@/services/jobScraper";
+import { 
+  saveJobsInBackground, 
+  subscribeToSaveProgress, 
+  getSaveState,
+  cancelSave 
+} from "@/services/backgroundJobSaver";
 import { 
   getScrapingState, 
   startScrapingSession, 
@@ -48,6 +54,7 @@ export default function HospitalJobScanner({ hospitals, onJobsScraped }) {
   const [selectedHospitals, setSelectedHospitals] = useState(new Set());
   const [allJobs, setAllJobs] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(null);
   const [previewJob, setPreviewJob] = useState(null);
 
   // Filter hospitals that have career URLs
@@ -66,6 +73,13 @@ export default function HospitalJobScanner({ hospitals, onJobsScraped }) {
       });
       setCurrentMessage(state.currentUrl ? `Scanning ${state.currentUrl}...` : '');
     }
+    
+    // Check if there's a save in progress
+    const saveState = getSaveState();
+    if (saveState && saveState.isRunning) {
+      setIsSaving(true);
+      setSaveProgress(saveState);
+    }
   }, []);
 
   // Subscribe to state changes
@@ -83,6 +97,21 @@ export default function HospitalJobScanner({ hospitals, onJobsScraped }) {
         if (!state.isRunning) {
           setCurrentMessage('Scan complete!');
         }
+      }
+    });
+    
+    return unsubscribe;
+  }, []);
+
+  // Subscribe to save progress
+  useEffect(() => {
+    const unsubscribe = subscribeToSaveProgress((state) => {
+      setSaveProgress(state);
+      setIsSaving(state.isRunning);
+      
+      if (!state.isRunning && state.savedCount > 0) {
+        // Save completed
+        setCurrentMessage(`Saved ${state.savedCount} new, ${state.updatedCount} updated, ${state.skippedCount} skipped`);
       }
     });
     
@@ -189,31 +218,24 @@ export default function HospitalJobScanner({ hospitals, onJobsScraped }) {
   const saveAllJobs = async () => {
     if (allJobs.length === 0) return;
     
+    // Use background saver - this continues even when navigating away
     setIsSaving(true);
-    try {
-      // Pass hospitals for additional data
-      const result = await saveScrapedJobs(allJobs, hospitals);
-      
-      const { summary } = result;
-      let message = `Saved ${summary.newJobs} new jobs`;
-      if (summary.updatedJobs > 0) {
-        message += `, updated ${summary.updatedJobs} existing jobs`;
+    setCurrentMessage(`Saving ${allJobs.length} jobs in background...`);
+    
+    // Start the background save (don't await - let it run in background)
+    saveJobsInBackground(allJobs, hospitals).then((result) => {
+      if (result) {
+        onJobsScraped?.(result.saved);
+        // Clear the jobs list after saving
+        setAllJobs([]);
       }
-      if (summary.skippedJobs > 0) {
-        message += ` (${summary.skippedJobs} skipped due to errors)`;
-      }
-      message += '. Jobs will now appear in the Dashboard.';
-      
-      alert(message);
-      onJobsScraped?.(result.saved);
-      // Clear the jobs list after saving
-      setAllJobs([]);
-    } catch (error) {
-      console.error('Error saving jobs:', error);
-      alert('Error saving jobs: ' + error.message);
-    } finally {
-      setIsSaving(false);
-    }
+    });
+  };
+
+  const handleCancelSave = () => {
+    cancelSave();
+    setIsSaving(false);
+    setCurrentMessage('Save cancelled');
   };
 
   const getStatusIcon = (status) => {
@@ -319,10 +341,17 @@ export default function HospitalJobScanner({ hospitals, onJobsScraped }) {
             </Button>
 
             {allJobs.length > 0 && (
-              <Button onClick={saveAllJobs} disabled={isSaving} className="bg-green-600 hover:bg-green-700">
-                <Save className="h-4 w-4 mr-2" />
-                {isSaving ? 'Saving...' : `Save ${allJobs.length} Jobs`}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button onClick={saveAllJobs} disabled={isSaving || backgroundSaveState.isRunning} className="bg-green-600 hover:bg-green-700">
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? 'Starting...' : backgroundSaveState.isRunning ? `Saving ${saveProgress.current}/${saveProgress.total}` : `Save ${allJobs.length} Jobs`}
+                </Button>
+                {backgroundSaveState.isRunning && (
+                  <span className="text-xs text-muted-foreground">
+                    (Saves in background - you can navigate away)
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
