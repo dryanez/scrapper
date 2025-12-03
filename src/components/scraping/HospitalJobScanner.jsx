@@ -54,7 +54,7 @@ export default function HospitalJobScanner({ hospitals, onJobsScraped }) {
   const [selectedHospitals, setSelectedHospitals] = useState(new Set());
   const [allJobs, setAllJobs] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveProgress, setSaveProgress] = useState(null);
+  const [saveProgress, setSaveProgress] = useState({ isRunning: false, current: 0, total: 0 });
   const [previewJob, setPreviewJob] = useState(null);
 
   // Filter hospitals that have career URLs
@@ -345,11 +345,11 @@ export default function HospitalJobScanner({ hospitals, onJobsScraped }) {
 
             {allJobs.length > 0 && (
               <div className="flex items-center gap-2">
-                <Button onClick={saveAllJobs} disabled={isSaving || backgroundSaveState.isRunning} className="bg-green-600 hover:bg-green-700">
+                <Button onClick={saveAllJobs} disabled={isSaving || saveProgress.isRunning} className="bg-green-600 hover:bg-green-700">
                   <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? 'Starting...' : backgroundSaveState.isRunning ? `Saving ${saveProgress.current}/${saveProgress.total}` : `Save ${allJobs.length} Jobs`}
+                  {isSaving ? 'Starting...' : saveProgress.isRunning ? `Saving ${saveProgress.current}/${saveProgress.total}` : `Save ${allJobs.length} Jobs`}
                 </Button>
-                {backgroundSaveState.isRunning && (
+                {saveProgress.isRunning && (
                   <span className="text-xs text-muted-foreground">
                     (Saves in background - you can navigate away)
                   </span>
