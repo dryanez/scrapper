@@ -138,26 +138,60 @@ const createSupabaseEntity = (tableName) => {
       return allData.slice(0, limit); // Respect the requested limit
     },
 
-    filter: async (filters = {}) => {
-      let query = supabase.from(tableName).select('*');
+    filter: async (filters = {}, orderBy = '-created_at', limit = 10000) => {
+      const isDesc = orderBy.startsWith('-');
+      const column = mapColumnName(orderBy.replace('-', ''));
       
-      Object.entries(filters).forEach(([key, value]) => {
-        // First check explicit mapping, then convert camelCase to snake_case
-        let mappedKey = mapColumnName(key);
-        // If not in explicit mapping, convert camelCase to snake_case
-        if (mappedKey === key && !key.includes('_')) {
-          mappedKey = toSnakeCase(key);
-        }
-        if (Array.isArray(value)) {
-          query = query.in(mappedKey, value);
-        } else {
-          query = query.eq(mappedKey, value);
-        }
-      });
+      // Build base query with filters
+      const buildQuery = () => {
+        let query = supabase.from(tableName).select('*');
+        
+        Object.entries(filters).forEach(([key, value]) => {
+          // First check explicit mapping, then convert camelCase to snake_case
+          let mappedKey = mapColumnName(key);
+          // If not in explicit mapping, convert camelCase to snake_case
+          if (mappedKey === key && !key.includes('_')) {
+            mappedKey = toSnakeCase(key);
+          }
+          if (Array.isArray(value)) {
+            query = query.in(mappedKey, value);
+          } else {
+            query = query.eq(mappedKey, value);
+          }
+        });
+        
+        return query;
+      };
       
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
+      // If limit is <= 1000, single query is fine
+      if (limit <= 1000) {
+        const { data, error } = await buildQuery()
+          .order(column, { ascending: !isDesc })
+          .limit(limit);
+        
+        if (error) throw error;
+        return data || [];
+      }
+      
+      // For limits > 1000, fetch in batches
+      let allData = [];
+      let start = 0;
+      const pageSize = 1000;
+      
+      while (allData.length < limit) {
+        const { data, error } = await buildQuery()
+          .order(column, { ascending: !isDesc })
+          .range(start, start + pageSize - 1);
+        
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        
+        allData.push(...data);
+        if (data.length < pageSize) break; // No more data
+        start += pageSize;
+      }
+      
+      return allData.slice(0, limit); // Respect the requested limit
     },
 
     get: async (id) => {

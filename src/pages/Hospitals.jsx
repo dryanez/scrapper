@@ -78,7 +78,7 @@ export default function Hospitals() {
     try {
       const [hospitalData, jobData] = await Promise.all([
         Hospital.list("-updated_date"),
-        Job.list("-created_date", 1000) // Increased limit to get more jobs
+        Job.list("-created_date", 10000) // Fetch all jobs (paginated)
       ]);
       
       const jobCounts = {};

@@ -51,7 +51,7 @@ export default function ApplicationsPage() {
         EmailLog.list("-created_date", 500),
         Application.list("-appliedAt", 500),
         Doctor.list("-updated_date", 500),
-        Job.list("-created_date", 1000)
+        Job.list("-created_date", 10000) // Fetch all jobs (paginated)
       ]);
       
       const mappedEmails = emailData.map(e => {
