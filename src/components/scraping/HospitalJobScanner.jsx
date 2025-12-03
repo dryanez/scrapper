@@ -59,6 +59,9 @@ export default function HospitalJobScanner({ hospitals, onJobsScraped }) {
 
   // Filter hospitals that have career URLs
   const scrapableHospitals = hospitals.filter(h => h.career_page_url || h.careerPageUrl);
+  
+  // Hospitals without URLs
+  const hospitalsWithoutUrl = hospitals.filter(h => !h.career_page_url && !h.careerPageUrl);
 
   // Resume state from localStorage on mount
   useEffect(() => {
@@ -417,11 +420,44 @@ export default function HospitalJobScanner({ hospitals, onJobsScraped }) {
           </CardTitle>
           <CardDescription>
             {scrapableHospitals.length} hospitals with career page URLs available
+            {hospitalsWithoutUrl.length > 0 && (
+              <span className="text-red-500 ml-2">
+                • {hospitalsWithoutUrl.length} without URL (skipped)
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[300px] pr-4">
             <div className="space-y-2">
+              {/* Hospitals without URLs - shown first with red badge */}
+              {hospitalsWithoutUrl.map((hospital) => (
+                <div 
+                  key={hospital.id} 
+                  className="flex flex-col gap-1 p-3 rounded-lg border border-red-200 bg-red-50/50 opacity-60"
+                >
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={false}
+                      disabled={true}
+                    />
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate flex items-center gap-2">
+                        {hospital.name}
+                        <Badge className="bg-red-100 text-red-700 text-xs border-red-300">
+                          No URL
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-red-500">
+                        No career page URL configured - will be skipped
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Hospitals with URLs - can be selected */}
               {scrapableHospitals.map((hospital) => {
                 const result = results.find(r => r.hospital.id === hospital.id);
                 const portalType = hospital.portal_type?.toLowerCase() || '';
